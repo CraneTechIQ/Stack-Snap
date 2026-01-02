@@ -3,41 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Stack & Snap - Final Build</title>
+    <title>Stack & Snap - Full Impact</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
     <style>
         body, html { margin: 0; padding: 0; overflow: hidden; background: #020205; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
         #ui { position: absolute; inset: 0; pointer-events: none; color: white; z-index: 10; }
         
-        .hud-top { position: absolute; top: 40px; left: 30px; display: flex; flex-direction: column; }
+        .hud-top { position: absolute; top: 40px; left: 30px; }
         .score-num { font-size: 5rem; font-weight: 900; line-height: 1; margin: 0; }
-        .best-label { font-size: 0.8rem; font-weight: 700; opacity: 0.5; letter-spacing: 0.1em; margin-top: 5px; }
+        .best-label { font-size: 0.8rem; font-weight: 700; opacity: 0.5; margin-top: 5px; }
         
-        /* Combo Text Animation */
         #combo-ui { 
             position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
             font-size: 3.5rem; font-weight: 900; font-style: italic; color: #00ffff;
-            opacity: 0; pointer-events: none; text-shadow: 0 0 20px #00ffff, 0 0 40px #7000ff;
+            opacity: 0; pointer-events: none; text-shadow: 0 0 20px #00ffff;
         }
-        .pop { animation: comboPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        .pop { animation: comboPop 0.5s ease-out forwards; }
         @keyframes comboPop {
             0% { opacity: 0; transform: translate(-50%, -20%) scale(0.5); }
             50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
             100% { opacity: 0; transform: translate(-50%, -80%) scale(1); }
         }
 
-        .challenge-banner { position: absolute; top: 20px; width: 100%; text-align: center; }
-        .challenge-banner span { background: rgba(0,255,255,0.1); border: 1px solid #0ff; padding: 8px 20px; border-radius: 30px; font-size: 0.75rem; color: #0ff; font-weight: 800; backdrop-filter: blur(10px); }
-        
-        .overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: auto; background: rgba(0,0,0,0.75); backdrop-filter: blur(15px); }
-        .glass-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); padding: 50px; border-radius: 40px; text-align: center; }
+        .overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: auto; background: rgba(0,0,0,0.7); backdrop-filter: blur(15px); }
         .btn { background: #00ffff; color: black; border: none; padding: 18px 45px; border-radius: 15px; font-weight: 900; cursor: pointer; margin-top: 25px; text-transform: uppercase; }
     </style>
 </head>
 <body>
     <div id="ui">
         <div id="hud" style="display:none;">
-            <div class="challenge-banner"><span>TIKTOK CHALLENGE: REACH 20 🏆</span></div>
             <div class="hud-top">
                 <p class="score-num" id="score-val">0</p>
                 <div class="best-label" id="best-val">BEST: 0</div>
@@ -45,16 +39,13 @@
             <div id="combo-ui">PERFECT!</div>
         </div>
         <div id="screen-start" class="overlay">
-            <h1 style="font-size:3rem; margin:0; font-weight:900;">STACK & SNAP</h1>
-            <p style="letter-spacing:0.5em; font-size:0.7rem; color:#0ff;">STARRY GLASS</p>
+            <h1 style="font-size:3rem; font-weight:900;">STACK & SNAP</h1>
             <p style="margin-top:50px; opacity:0.5; font-weight:bold;">TAP TO START</p>
         </div>
         <div id="screen-gameover" class="overlay" style="display:none;">
-            <div class="glass-card">
-                <h2 style="font-size:3rem; color:#ff0070; margin:0;">CRASHED</h2>
-                <p id="final-score" style="font-weight:bold; margin:20px 0;"></p>
-                <button class="btn" onclick="restartGame()">REPLAY</button>
-            </div>
+            <h2 style="font-size:3rem; color:#ff0070;">CRASHED</h2>
+            <p id="final-score" style="font-weight:bold;"></p>
+            <button class="btn" onclick="restartGame()">REPLAY</button>
         </div>
     </div>
 
@@ -63,57 +54,54 @@
         let stack = [], rubble = [];
         let state = { 
             score: 0, combo: 0, status: 'START', axis: 'x', dir: 1, 
-            speed: 0.16, width: 4, depth: 4,
+            speed: 0.16, width: 4, depth: 4, shake: 0,
             bestScore: localStorage.getItem('stackBest') || 0
         };
         const PERFECT_THRESHOLD = 0.12;
 
-        const SFX = {
+        const AudioSfx = {
             ctx: null,
             init() { if(!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
-            play(isPerfect) {
+            playHit(isPerfect) {
                 this.init();
-                if(this.ctx.state === 'suspended') this.ctx.resume();
                 const o = this.ctx.createOscillator(), g = this.ctx.createGain();
                 o.type = isPerfect ? 'sine' : 'triangle';
-                // Pitch goes up with combo
-                const freq = isPerfect ? 400 + (state.combo * 40) : 220;
-                o.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                o.frequency.setValueAtTime(isPerfect ? 440 + (state.combo * 40) : 220, this.ctx.currentTime);
                 g.gain.setValueAtTime(0.1, this.ctx.currentTime);
-                g.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + 0.4);
+                g.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + 0.3);
                 o.connect(g); g.connect(this.ctx.destination);
-                o.start(); o.stop(this.ctx.currentTime + 0.4);
+                o.start(); o.stop(this.ctx.currentTime + 0.3);
             },
-            playGameOver() {
+            playCrash() {
                 this.init();
                 const o = this.ctx.createOscillator(), g = this.ctx.createGain();
-                o.type = 'sawtooth'; o.frequency.setValueAtTime(150, this.ctx.currentTime);
-                o.frequency.exponentialRampToValueAtTime(40, this.ctx.currentTime + 0.8);
-                g.gain.setValueAtTime(0.1, this.ctx.currentTime);
-                g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.8);
+                o.type = 'sawtooth'; o.frequency.setValueAtTime(100, this.ctx.currentTime);
+                o.frequency.exponentialRampToValueAtTime(30, this.ctx.currentTime + 0.6);
+                g.gain.setValueAtTime(0.2, this.ctx.currentTime);
+                g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.6);
                 o.connect(g); g.connect(this.ctx.destination);
-                o.start(); o.stop(this.ctx.currentTime + 0.8);
+                o.start(); o.stop(this.ctx.currentTime + 0.6);
             }
         };
 
         function init() {
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 1000);
-            camera.position.set(10, 10, 10); camera.lookAt(0, 0, 0);
+            camera.position.set(10, 10, 10);
             
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             document.body.appendChild(renderer.domElement);
             
-            scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-            const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+            scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+            const sun = new THREE.DirectionalLight(0xffffff, 1);
             sun.position.set(5, 15, 5); scene.add(sun);
 
             stars = new THREE.Group();
             for(let i=0; i<150; i++) {
-                const s = new THREE.Mesh(new THREE.SphereGeometry(0.1, 4, 4), new THREE.MeshBasicMaterial({ color: i%2?0x00ffff:0xff00ff, transparent: true }));
+                const s = new THREE.Mesh(new THREE.SphereGeometry(0.1, 4, 4), new THREE.MeshBasicMaterial({ color: i%2?0x00ffff:0xff00ff }));
                 const [r, th, ph] = [40+Math.random()*40, Math.random()*Math.PI*2, Math.random()*Math.PI];
-                s.position.set(r*Math.sin(ph)*Math.cos(th), r*Math.sin(ph)*Math.sin(th), r*Math.cos(ph));
+                s.position.set(r*Math.sin(ph)*Math.cos(th), r*Math.sin(ph)*Math.sin(th), r*r*0); // Simple starfield
                 stars.add(s);
             }
             scene.add(stars);
@@ -125,12 +113,12 @@
         }
 
         function createFoundation() {
-            const mesh = new THREE.Mesh(new THREE.BoxGeometry(4, 1, 4), new THREE.MeshPhysicalMaterial({ color: 0x00ffff, transmission: 0.9, thickness: 1.5, transparent: true }));
+            const mesh = new THREE.Mesh(new THREE.BoxGeometry(4, 1, 4), new THREE.MeshPhysicalMaterial({ color: 0x00ffff, transmission: 0.9, transparent: true }));
             scene.add(mesh); stack.push(mesh);
         }
 
         function handleTap() {
-            SFX.init(); // Initialize audio context on first tap
+            AudioSfx.init();
             if(state.status === 'START') {
                 state.status = 'PLAYING';
                 document.getElementById('screen-start').style.display = 'none';
@@ -142,21 +130,12 @@
         function spawn() {
             const prev = stack[stack.length-1];
             state.axis = state.axis === 'x' ? 'z' : 'x';
-            const hue = (stack.length * 0.1) % 1;
-            const mat = new THREE.MeshPhysicalMaterial({ color: new THREE.Color().setHSL(hue, 0.8, 0.6), transmission: 0.9, transparent: true });
+            const mat = new THREE.MeshPhysicalMaterial({ color: new THREE.Color().setHSL((stack.length * 0.1) % 1, 0.8, 0.6), transmission: 0.9, transparent: true });
             const mesh = new THREE.Mesh(new THREE.BoxGeometry(state.width, 1, state.depth), mat);
             mesh.position.y = stack.length;
             mesh.position[state.axis === 'x' ? 'z' : 'x'] = prev.position[state.axis === 'x' ? 'z' : 'x'];
             mesh.position[state.axis] = state.dir * 12;
             scene.add(mesh); state.activeBlock = mesh;
-        }
-
-        function showCombo(text) {
-            const el = document.getElementById('combo-ui');
-            el.innerText = text;
-            el.classList.remove('pop');
-            void el.offsetWidth; // Force reflow to restart CSS animation
-            el.classList.add('pop');
         }
 
         function place() {
@@ -168,11 +147,9 @@
 
             if(overlap <= 0.05) {
                 state.status = 'GAMEOVER';
-                SFX.playGameOver();
-                if(state.score > state.bestScore) {
-                    state.bestScore = state.score;
-                    localStorage.setItem('stackBest', state.bestScore);
-                }
+                state.shake = 1.2; // Massive shake on crash
+                AudioSfx.playCrash();
+                if(state.score > state.bestScore) localStorage.setItem('stackBest', state.score);
                 document.getElementById('screen-gameover').style.display = 'flex';
                 document.getElementById('final-score').innerText = "SCORE: " + state.score;
                 return;
@@ -182,11 +159,13 @@
             if(isPerfect) {
                 active.position[state.axis] = prev.position[state.axis];
                 state.combo++;
-                showCombo(state.combo > 2 ? `COMBO x${state.combo}` : "PERFECT!");
-                SFX.play(true);
-                // Flash effect
+                const el = document.getElementById('combo-ui');
+                el.innerText = state.combo > 2 ? `COMBO x${state.combo}` : "PERFECT!";
+                el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
                 active.material.emissive = new THREE.Color(0xffffff);
-                setTimeout(() => active.material.emissive = new THREE.Color(0x000000), 150);
+                setTimeout(() => active.material.emissive = new THREE.Color(0x000000), 100);
+                state.shake = 0.2;
+                AudioSfx.playHit(true);
             } else {
                 const sliceSize = size - overlap;
                 const rubbleGeo = state.axis === 'x' ? new THREE.BoxGeometry(sliceSize, 1, state.depth) : new THREE.BoxGeometry(state.width, 1, sliceSize);
@@ -201,7 +180,7 @@
                 active.geometry = new THREE.BoxGeometry(state.width, 1, state.depth);
                 active.position[state.axis] = prev.position[state.axis] + diff/2;
                 state.combo = 0;
-                SFX.play(false);
+                AudioSfx.playHit(false);
             }
 
             stack.push(active);
@@ -213,32 +192,28 @@
         }
 
         function restartGame() {
-            stack.forEach(b => scene.remove(b));
-            rubble.forEach(r => scene.remove(r.mesh));
-            if(state.activeBlock) scene.remove(state.activeBlock);
-            stack = []; rubble = [];
-            state.score = 0; state.combo = 0; state.status = 'PLAYING';
-            state.width = 4; state.depth = 4; state.speed = 0.16;
-            document.getElementById('screen-gameover').style.display = 'none';
-            document.getElementById('score-val').innerText = "0";
-            document.getElementById('best-val').innerText = "BEST: " + state.bestScore;
-            newCameraY = 10; camera.position.y = 10;
-            createFoundation(); spawn();
+            location.reload(); // Purest way to reset all states and ThreeJS memory
         }
 
         let newCameraY = 10;
         function animate() {
             requestAnimationFrame(animate);
-            if(stars) stars.rotation.y += 0.0004;
-            
             if(state.status === 'PLAYING' && state.activeBlock) {
                 state.activeBlock.position[state.axis] += state.dir * state.speed;
                 if(Math.abs(state.activeBlock.position[state.axis]) > 12.5) state.dir *= -1;
             }
 
+            // Screen Shake Math
+            if(state.shake > 0) {
+                camera.position.x = 10 + (Math.random() - 0.5) * state.shake;
+                camera.position.z = 10 + (Math.random() - 0.5) * state.shake;
+                state.shake *= 0.9;
+            } else {
+                camera.position.x = 10; camera.position.z = 10;
+            }
+
             rubble.forEach((r, i) => {
                 r.vel += 0.02; r.mesh.position.y -= r.vel;
-                r.mesh.rotation.x += 0.02;
                 if(r.mesh.position.y < -15) { scene.remove(r.mesh); rubble.splice(i, 1); }
             });
 
