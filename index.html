@@ -13,17 +13,17 @@
         .score-num { font-size: 5rem; font-weight: 900; line-height: 1; margin: 0; }
         .best-label { font-size: 0.8rem; font-weight: 700; opacity: 0.5; letter-spacing: 0.1em; margin-top: 5px; }
         
-        /* Combo Animation */
+        /* Combo Text Animation */
         #combo-ui { 
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            font-size: 3rem; font-weight: 900; font-style: italic; color: #0ff;
-            opacity: 0; pointer-events: none; transition: 0.2s; text-shadow: 0 0 20px #0ff;
+            position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 3.5rem; font-weight: 900; font-style: italic; color: #00ffff;
+            opacity: 0; pointer-events: none; text-shadow: 0 0 20px #00ffff, 0 0 40px #7000ff;
         }
-        .combo-active { animation: popOut 0.5s ease-out forwards; }
-        @keyframes popOut {
-            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
-            50% { opacity: 1; transform: translate(-50%, -80%) scale(1.2); }
-            100% { opacity: 0; transform: translate(-50%, -100%) scale(1); }
+        .pop { animation: comboPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        @keyframes comboPop {
+            0% { opacity: 0; transform: translate(-50%, -20%) scale(0.5); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+            100% { opacity: 0; transform: translate(-50%, -80%) scale(1); }
         }
 
         .challenge-banner { position: absolute; top: 20px; width: 100%; text-align: center; }
@@ -59,14 +59,42 @@
     </div>
 
     <script>
-        let scene, camera, renderer, stars, sun;
+        let scene, camera, renderer, stars;
         let stack = [], rubble = [];
         let state = { 
             score: 0, combo: 0, status: 'START', axis: 'x', dir: 1, 
-            speed: 0.16, width: 4, depth: 4, shake: 0,
+            speed: 0.16, width: 4, depth: 4,
             bestScore: localStorage.getItem('stackBest') || 0
         };
-        const PERFECT_THRESHOLD = 0.15;
+        const PERFECT_THRESHOLD = 0.12;
+
+        const SFX = {
+            ctx: null,
+            init() { if(!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
+            play(isPerfect) {
+                this.init();
+                if(this.ctx.state === 'suspended') this.ctx.resume();
+                const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+                o.type = isPerfect ? 'sine' : 'triangle';
+                // Pitch goes up with combo
+                const freq = isPerfect ? 400 + (state.combo * 40) : 220;
+                o.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                g.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + 0.4);
+                o.connect(g); g.connect(this.ctx.destination);
+                o.start(); o.stop(this.ctx.currentTime + 0.4);
+            },
+            playGameOver() {
+                this.init();
+                const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+                o.type = 'sawtooth'; o.frequency.setValueAtTime(150, this.ctx.currentTime);
+                o.frequency.exponentialRampToValueAtTime(40, this.ctx.currentTime + 0.8);
+                g.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.8);
+                o.connect(g); g.connect(this.ctx.destination);
+                o.start(); o.stop(this.ctx.currentTime + 0.8);
+            }
+        };
 
         function init() {
             scene = new THREE.Scene();
@@ -77,8 +105,8 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
             document.body.appendChild(renderer.domElement);
             
-            scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-            sun = new THREE.DirectionalLight(0xffffff, 1);
+            scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+            const sun = new THREE.DirectionalLight(0xffffff, 0.8);
             sun.position.set(5, 15, 5); scene.add(sun);
 
             stars = new THREE.Group();
@@ -102,6 +130,7 @@
         }
 
         function handleTap() {
+            SFX.init(); // Initialize audio context on first tap
             if(state.status === 'START') {
                 state.status = 'PLAYING';
                 document.getElementById('screen-start').style.display = 'none';
@@ -114,7 +143,7 @@
             const prev = stack[stack.length-1];
             state.axis = state.axis === 'x' ? 'z' : 'x';
             const hue = (stack.length * 0.1) % 1;
-            const mat = new THREE.MeshPhysicalMaterial({ color: new THREE.Color().setHSL(hue, 0.8, 0.6), transmission: 0.9, transparent: true, emissive: 0x000000 });
+            const mat = new THREE.MeshPhysicalMaterial({ color: new THREE.Color().setHSL(hue, 0.8, 0.6), transmission: 0.9, transparent: true });
             const mesh = new THREE.Mesh(new THREE.BoxGeometry(state.width, 1, state.depth), mat);
             mesh.position.y = stack.length;
             mesh.position[state.axis === 'x' ? 'z' : 'x'] = prev.position[state.axis === 'x' ? 'z' : 'x'];
@@ -122,12 +151,12 @@
             scene.add(mesh); state.activeBlock = mesh;
         }
 
-        function triggerComboUI(text) {
+        function showCombo(text) {
             const el = document.getElementById('combo-ui');
             el.innerText = text;
-            el.classList.remove('combo-active');
-            void el.offsetWidth; // Reset animation
-            el.classList.add('combo-active');
+            el.classList.remove('pop');
+            void el.offsetWidth; // Force reflow to restart CSS animation
+            el.classList.add('pop');
         }
 
         function place() {
@@ -139,6 +168,7 @@
 
             if(overlap <= 0.05) {
                 state.status = 'GAMEOVER';
+                SFX.playGameOver();
                 if(state.score > state.bestScore) {
                     state.bestScore = state.score;
                     localStorage.setItem('stackBest', state.bestScore);
@@ -152,11 +182,11 @@
             if(isPerfect) {
                 active.position[state.axis] = prev.position[state.axis];
                 state.combo++;
-                triggerComboUI(state.combo > 2 ? `COMBO x${state.combo}!` : "PERFECT!");
-                // Visual Flash
-                active.material.emissive.setHex(0xffffff);
-                setTimeout(() => active.material.emissive.setHex(0x000000), 100);
-                state.shake = 0.2;
+                showCombo(state.combo > 2 ? `COMBO x${state.combo}` : "PERFECT!");
+                SFX.play(true);
+                // Flash effect
+                active.material.emissive = new THREE.Color(0xffffff);
+                setTimeout(() => active.material.emissive = new THREE.Color(0x000000), 150);
             } else {
                 const sliceSize = size - overlap;
                 const rubbleGeo = state.axis === 'x' ? new THREE.BoxGeometry(sliceSize, 1, state.depth) : new THREE.BoxGeometry(state.width, 1, sliceSize);
@@ -171,6 +201,7 @@
                 active.geometry = new THREE.BoxGeometry(state.width, 1, state.depth);
                 active.position[state.axis] = prev.position[state.axis] + diff/2;
                 state.combo = 0;
+                SFX.play(false);
             }
 
             stack.push(active);
@@ -203,13 +234,6 @@
             if(state.status === 'PLAYING' && state.activeBlock) {
                 state.activeBlock.position[state.axis] += state.dir * state.speed;
                 if(Math.abs(state.activeBlock.position[state.axis]) > 12.5) state.dir *= -1;
-            }
-
-            // Screen Shake
-            if(state.shake > 0) {
-                camera.position.x += Math.sin(Date.now() * 0.1) * state.shake;
-                state.shake *= 0.9;
-                if(state.shake < 0.01) { state.shake = 0; camera.position.x = 10; }
             }
 
             rubble.forEach((r, i) => {
