@@ -1,379 +1,602 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Stack & Snap - Glassmorphic Edition</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
+    <title>Stack & Snap - Cosmic Edition</title>
+    
+    <!-- Simple error safety net -->
+    <script>
+        window.addEventListener('unhandledrejection', (e) => e.preventDefault());
+        window.onerror = () => true;
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800;900&display=swap" rel="stylesheet">
+    
     <style>
+        :root {
+            --neon-cyan: #00ffff;
+            --neon-pink: #ff00ff;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
         body, html {
             margin: 0; padding: 0; overflow: hidden;
-            background: #050508;
+            background: #000003;
             font-family: 'Inter', -apple-system, sans-serif;
             -webkit-tap-highlight-color: transparent;
-            user-select: none;
-            -webkit-user-select: none;
+            user-select: none; color: white;
         }
-        #root { position: absolute; inset: 0; }
+        #root { position: absolute; inset: 0; z-index: 1; }
         #ui-root {
-            position: absolute; inset: 0; pointer-events: none;
-            color: white; z-index: 100;
-        }
-        
-        /* Centered Screen Layouts (Start/GameOver) */
-        .overlay-screen {
-            position: absolute; inset: 0;
+            position: absolute; inset: 0; pointer-events: none; z-index: 100;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            padding: 20px;
         }
-
-        /* Top Corner HUD (During Gameplay) */
-        .hud-corner {
-            position: absolute; top: 30px; left: 24px;
-            display: flex; flex-direction: column; align-items: flex-start;
-            pointer-events: none;
+        .overlay {
+            width: 100%; height: 100%; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; pointer-events: auto;
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            background: rgba(0,0,0,0.5); transition: opacity 0.4s;
         }
-
+        .hud {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; padding: 40px; box-sizing: border-box;
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .hud-top-center { text-align: center; pointer-events: none; margin-top: 20px; }
+        
         .glass-panel {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 32px; padding: 40px; text-align: center;
-            box-shadow: 0 30px 60px rgba(0,0,0,0.5);
-            width: 80%; max-width: 320px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(32px); -webkit-backdrop-filter: blur(32px);
+            border-radius: 40px; padding: 30px; text-align: center;
+            box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+            width: 85%; max-width: 380px;
             pointer-events: auto;
         }
-
         .btn {
-            padding: 18px 36px; border-radius: 18px; font-weight: 800; font-size: 1.1rem;
+            padding: 20px 32px; border-radius: 20px; font-weight: 800; font-size: 1.1rem;
             transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             pointer-events: auto; cursor: pointer; border: none; outline: none;
-            width: 100%; margin-top: 10px;
-            display: block;
+            width: 100%; margin: 10px 0; display: block; text-transform: uppercase;
+            letter-spacing: 0.15em;
         }
-        .btn-glass {
-            background: rgba(255, 255, 255, 0.1); color: white;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        .btn-glass:active { transform: scale(0.92); background: rgba(255, 255, 255, 0.2); }
-        .btn-cta {
-            background: #00ffff; color: #000;
-            box-shadow: 0 0 30px rgba(0, 255, 255, 0.4);
-        }
-        .btn-cta:active { transform: scale(0.92); filter: brightness(1.2); }
+        .btn-glass { background: rgba(255, 255, 255, 0.08); color: white; border: 1px solid rgba(255,255,255,0.1); }
+        .btn-cta { background: var(--neon-cyan); color: #000; box-shadow: 0 0 30px rgba(0,255,255,0.4); }
+        .btn:active { transform: scale(0.92); }
         
-        .score-text { font-size: 3.5rem; font-weight: 900; tabular-nums: true; line-height: 1; margin: 0; }
-        .best-label { font-size: 0.7rem; font-weight: 700; opacity: 0.4; letter-spacing: 0.1em; margin-top: 2px; }
-        
-        .combo-badge {
-            margin-top: 10px; padding: 6px 12px; border-radius: 10px;
-            background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255,255,255,0.1);
-            display: flex; flex-direction: column; align-items: flex-start;
-        }
-        .combo-title { font-weight: 900; font-size: 0.9rem; text-transform: uppercase; font-style: italic; }
-        .streak-label { font-size: 0.6rem; letter-spacing: 0.1em; font-weight: 700; opacity: 0.8; }
-
-        .tap-prompt { 
-            margin-top: 40px;
-            font-weight: 700; letter-spacing: 0.2em; opacity: 0.6; 
-            animation: pulse 2s infinite; font-size: 0.8rem;
-        }
-        @keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.8; } }
-
-        @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-        .animate-pop { animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
-        
-        .title-text {
-            font-size: min(11vw, 3.2rem); 
+        .score-huge { 
+            font-size: 5.5rem; 
             font-weight: 900; 
-            letter-spacing: -2px; 
-            margin: 0;
-            line-height: 1;
-            text-align: center;
+            margin: 0; 
+            line-height: 1; 
+            text-shadow: 0 0 30px rgba(255,255,255,0.2);
+            transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
+
+        .combo-popup {
+            font-size: 2.8rem;
+            font-weight: 900;
+            font-style: italic;
+            text-transform: uppercase;
+            letter-spacing: -0.05em;
+            margin-top: 5px;
+            animation: comboIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            filter: drop-shadow(0 0 25px currentColor);
+        }
+
+        @keyframes comboIn {
+            0% { transform: scale(0.4) rotate(-5deg); opacity: 0; }
+            40% { transform: scale(1.15) rotate(2deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0); opacity: 1; }
+        }
+
+        .streak-counter {
+            font-size: 1rem;
+            font-weight: 800;
+            letter-spacing: 0.4em;
+            opacity: 1;
+            margin-top: 5px;
+            text-transform: uppercase;
+            text-shadow: 0 0 15px rgba(255,255,255,0.5);
+        }
+        
+        #loading-screen {
+            position: fixed; inset: 0; background: #000003; z-index: 1000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .loader-bar { width: 240px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 24px; overflow: hidden; }
+        .loader-fill { width: 0%; height: 100%; background: var(--neon-cyan); transition: width 0.4s; }
+        
+        .theme-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+            margin: 20px 0; max-height: 200px; overflow-y: auto; padding: 10px;
+        }
+        .theme-item {
+            aspect-ratio: 1; border-radius: 14px; border: 2px solid transparent;
+            cursor: pointer; position: relative; display: flex; align-items: center; justify-content: center;
+            background: rgba(255,255,255,0.05); overflow: hidden; transition: 0.2s;
+        }
+        .theme-item.selected { border-color: var(--neon-cyan); transform: scale(1.05); }
+        .theme-item.locked { opacity: 0.2; filter: grayscale(1); cursor: default; }
+
+        .unlock-badge {
+            font-size: 0.6rem; font-weight: 900; color: #fff;
+            background: rgba(0,0,0,0.8); padding: 4px 6px; border-radius: 6px;
+            position: absolute; bottom: 4px; right: 4px;
+            letter-spacing: 0.1em; pointer-events: none;
+        }
+
+        .milestone-container {
+            margin: 15px 0; padding: 12px; background: rgba(255,255,255,0.03);
+            border-radius: 16px; border: 1px dashed rgba(255,255,255,0.1);
+        }
+
+        .milestone-text {
+            font-size: 0.7rem; font-weight: 800; text-transform: uppercase;
+            letter-spacing: 0.15em; color: var(--neon-cyan); opacity: 0.9;
+            display: block; line-height: 1.4;
+        }
+
+        .best-stats-bar {
+            display: flex; justify-content: center; gap: 20px;
+            margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding-bottom: 15px;
+        }
+        .stat-item { display: flex; flex-direction: column; align-items: center; }
+        .stat-label { font-size: 0.6rem; font-weight: 800; opacity: 0.5; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 4px; }
+        .stat-value { font-size: 1.4rem; font-weight: 900; color: #fff; }
+
     </style>
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://esm.sh/three@^0.182.0"
-  }
-}
-</script>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/examples/jsm/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
 </head>
 <body>
+    <div id="loading-screen">
+        <h2 style="letter-spacing: 0.6em; font-weight: 900; color: var(--neon-cyan)">STACK & SNAP</h2>
+        <div class="loader-bar"><div id="loader-fill" class="loader-fill"></div></div>
+    </div>
     <div id="root"></div>
     <div id="ui-root"></div>
 
-    <script>
-        /**
-         * FACEBOOK PLAYABLE AD CTA
-         */
-        window.FbPlayableAd = window.FbPlayableAd || {
-            onCTAClick: function() {
-                console.log("Playable CTA Clicked");
-                window.open("https://apps.apple.com", "_blank");
-            }
-        };
+    <script type="module">
+        import * as THREE from 'three';
+        import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+        import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+
+        const THEMES = [
+            { id: 'neon', name: 'NEON', colors: ['#00ffff', '#7000ff', '#ff0070'], unlock: 0 },
+            { id: 'cyber', name: 'CYBER', colors: ['#ffcf00', '#ff0070', '#00ff70'], unlock: 20 },
+            { id: 'emerald', name: 'EMERALD', colors: ['#00ff70', '#00ffaa', '#008855'], unlock: 50 },
+            { id: 'ruby', name: 'RUBY', colors: ['#ff0000', '#aa0000', '#550000'], unlock: 100 },
+            { id: 'ghost', name: 'GHOST', colors: ['#ffffff', '#cccccc', '#999999'], unlock: 150 }
+        ];
 
         const CONFIG = {
             BLOCK_HEIGHT: 1,
             INITIAL_SIZE: 4,
             SPEED_INITIAL: 0.16,
-            SPEED_INC: 0.004,
-            MAX_SPEED: 0.5,
-            PERFECT_THRESHOLD: 0.15,
-            COLORS: ['#00ffff', '#7000ff', '#ff0070', '#ffcf00', '#00ff70']
+            SPEED_INC: 0.005,
+            MAX_SPEED: 0.45,
+            PERFECT_THRESHOLD: 0.12,
+            MERCY_COUNT: 3,
+            MERCY_THRESHOLD: 0.3,
+            CAMERA_LERP: 0.1,
+            MAX_RUBBLE: 100
         };
 
         const state = {
-            status: 'START',
+            status: 'LOADING', 
             score: 0,
-            bestScore: parseInt(localStorage.getItem('stack_snap_best_score')) || 0,
+            bestScore: 0,
+            bestStreak: 0,
             combo: 0,
+            maxSessionCombo: 0,
+            currentTheme: THEMES[0],
             axis: 'x',
             direction: 1,
             speed: CONFIG.SPEED_INITIAL,
             stack: [],
-            rubble: [],
-            effects: [],
+            rubbleData: [], 
             activeBlock: null,
-            lastTime: 0
+            lastTime: 0,
+            cameraOrbit: 0,
+            flash: 0,
+            camPos: new THREE.Vector3(14, 8, 14),
+            camTarget: new THREE.Vector3(14, 8, 14),
+            lookTarget: new THREE.Vector3(0, 2, 0)
         };
 
         const AudioService = {
             ctx: null,
             scale: [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25],
-            init() {
-                if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            init() { 
+                try {
+                    if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); 
+                } catch(e) {}
             },
             playNote(step, isPerfect) {
                 if (!this.ctx) return;
-                if (this.ctx.state === 'suspended') this.ctx.resume();
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                const freq = this.scale[step % 8] * Math.pow(2, Math.floor(step / 8));
-                osc.type = isPerfect ? 'sine' : 'triangle';
-                osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-                gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + 0.6);
-                osc.connect(gain); gain.connect(this.ctx.destination);
-                osc.start(); osc.stop(this.ctx.currentTime + 0.6);
+                try {
+                    if (this.ctx.state === 'suspended') this.ctx.resume();
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = isPerfect ? 'sine' : 'triangle';
+                    const freq = this.scale[step % 8] * Math.pow(2, Math.floor(step / 8));
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + 0.6);
+                    osc.connect(gain); gain.connect(this.ctx.destination);
+                    osc.start(); osc.stop(this.ctx.currentTime + 0.6);
+                } catch(e) {}
             },
             playGameOver() {
                 if (!this.ctx) return;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(120, this.ctx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(30, this.ctx.currentTime + 0.8);
-                gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
-                gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.8);
-                osc.connect(gain); gain.connect(this.ctx.destination);
-                osc.start(); osc.stop(this.ctx.currentTime + 0.8);
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(100, this.ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(30, this.ctx.currentTime + 0.8);
+                    gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.8);
+                    osc.connect(gain); gain.connect(this.ctx.destination);
+                    osc.start(); osc.stop(this.ctx.currentTime + 0.8);
+                } catch(e) {}
             }
         };
 
         const UIManager = {
-            root: document.getElementById('ui-root'),
-            getComboTitle(c) {
-                if (c < 2) return "PERFECT!";
-                if (c < 5) return "COOL!";
-                if (c < 10) return "INSANE!!";
-                return "UNSTOPPABLE!!!";
+            root: null,
+            getComboTitle(combo) {
+                if (combo < 2) return "PERFECT";
+                if (combo < 4) return "COOL!";
+                if (combo < 7) return "SICK!!";
+                if (combo < 10) return "INSANE!!!";
+                if (combo < 15) return "GODLIKE!!!!";
+                return "UNSTOPPABLE!!!!!";
             },
             render() {
+                if (!this.root) this.root = document.getElementById('ui-root');
+                if (!this.root) return;
                 this.root.innerHTML = '';
-                if (state.status === 'START') {
-                    this.root.innerHTML = `
-                        <div class="overlay-screen animate-pop">
-                            <h1 class="title-text">STACK & SNAP</h1>
-                            <p style="color: #0ff; font-weight: 700; letter-spacing: 0.3em; font-size: 0.7rem; margin-top: 5px;">GLASS EDITION</p>
-                            <div class="tap-prompt">TAP TO START</div>
-                        </div>
-                    `;
-                } else if (state.status === 'PLAYING') {
-                    this.root.innerHTML = `
-                        <div class="hud-corner animate-pop">
-                            <div class="score-text">${state.score}</div>
-                            <div class="best-label">BEST: ${state.bestScore}</div>
-                            ${state.combo > 0 ? `
-                                <div class="combo-badge" style="border-color: ${CONFIG.COLORS[Math.min(state.combo, 4)]}">
-                                    <div class="combo-title" style="color: ${CONFIG.COLORS[Math.min(state.combo, 4)]}">${this.getComboTitle(state.combo)}</div>
-                                    <div class="streak-label">${state.combo}X STREAK</div>
-                                </div>
-                            ` : ''}
-                        </div>
-                    `;
-                } else if (state.status === 'GAMEOVER') {
-                    this.root.innerHTML = `
-                        <div class="overlay-screen">
-                            <div class="glass-panel animate-pop">
-                                <h2 style="font-size: 2.5rem; font-weight: 900; color: #ff0070; margin: 0 0 10px 0;">CRASHED!</h2>
-                                <div style="display: flex; justify-content: space-around; gap: 20px; margin: 20px 0;">
-                                    <div><p style="font-size: 0.7rem; opacity: 0.6; font-weight: 800; margin-bottom: 5px;">SCORE</p><p style="font-size: 2rem; font-weight: 900;">${state.score}</p></div>
-                                    <div><p style="font-size: 0.7rem; opacity: 0.6; font-weight: 800; margin-bottom: 5px;">BEST</p><p style="font-size: 2rem; font-weight: 900; color: #0ff;">${state.bestScore}</p></div>
-                                </div>
-                                <button id="btn-restart" class="btn btn-glass">TRY AGAIN</button>
-                                <button id="btn-cta" class="btn btn-cta">INSTALL NOW</button>
+                try {
+                    if (state.status === 'START') this.renderStart();
+                    else if (state.status === 'PLAYING') this.renderHUD();
+                    else if (state.status === 'GAMEOVER') this.renderGameOver();
+                    else if (state.status === 'PAUSED') this.renderPaused();
+                } catch(e) { console.warn("UI Refresh failed", e); }
+            },
+            renderStart() {
+                const overlay = document.createElement('div');
+                overlay.className = 'overlay';
+                
+                const nextTheme = THEMES.find(t => state.bestScore < t.unlock);
+                const milestoneHTML = nextTheme 
+                    ? `<div class="milestone-container">
+                        <span class="milestone-text">Reach ${nextTheme.unlock} to unlock<br/>${nextTheme.name} Theme</span>
+                       </div>` 
+                    : `<div class="milestone-container"><span class="milestone-text" style="color:#00ff70">All Themes Unlocked!</span></div>`;
+
+                overlay.innerHTML = `
+                    <div class="glass-panel">
+                        <h1 style="font-weight: 900; letter-spacing: -2px; margin: 0; font-size: 2.5rem; text-shadow: 0 0 20px var(--neon-cyan)">STACK & SNAP</h1>
+                        <p style="opacity: 0.5; font-size: 0.6rem; letter-spacing: 0.3em; font-weight: 800; margin-bottom: 25px; text-transform: uppercase;">Cosmic Glass Edition</p>
+                        
+                        <div class="best-stats-bar">
+                            <div class="stat-item">
+                                <span class="stat-label">Best Score</span>
+                                <span class="stat-value">${state.bestScore}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Best Streak</span>
+                                <span class="stat-value" style="color: #ff00ff">${state.bestStreak}</span>
                             </div>
                         </div>
-                    `;
-                    document.getElementById('btn-restart').addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        restartGame();
-                    });
-                    document.getElementById('btn-cta').addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        window.FbPlayableAd.onCTAClick();
-                    });
-                }
+
+                        <div class="theme-grid" id="theme-grid"></div>
+                        ${milestoneHTML}
+                        <button id="start-btn" class="btn btn-cta">START MISSION</button>
+                    </div>
+                `;
+                this.root.appendChild(overlay);
+                this.populateThemes();
+                const btn = document.getElementById('start-btn');
+                if(btn) btn.onclick = (e) => { e.stopPropagation(); startGame(); };
+            },
+            populateThemes() {
+                const grid = document.getElementById('theme-grid');
+                if(!grid) return;
+                THEMES.forEach(t => {
+                    const isLocked = state.bestScore < t.unlock;
+                    const el = document.createElement('div');
+                    el.className = `theme-item ${isLocked ? 'locked' : ''} ${state.currentTheme.id === t.id ? 'selected' : ''}`;
+                    el.style.background = `linear-gradient(135deg, ${t.colors[0]}, ${t.colors[2]})`;
+                    
+                    if (isLocked) {
+                        el.innerHTML = `<span class="unlock-badge">${t.unlock}</span>`;
+                    } else {
+                        el.onclick = (e) => {
+                            e.stopPropagation();
+                            state.currentTheme = t;
+                            this.render();
+                            updateThemeVisuals();
+                        };
+                    }
+                    grid.appendChild(el);
+                });
+            },
+            renderHUD() {
+                const hud = document.createElement('div');
+                hud.className = 'hud';
+                const comboColor = state.currentTheme.colors[0];
+                hud.innerHTML = `
+                    <div class="hud-top-center">
+                        <div class="score-huge" style="transform: scale(${1 + Math.min(state.combo * 0.05, 0.5)})">${state.score}</div>
+                        ${state.combo > 0 ? `
+                            <div id="combo-popup" class="combo-popup" style="color: ${comboColor}">
+                                ${this.getComboTitle(state.combo)}
+                            </div>
+                            <div class="streak-counter" style="color: ${comboColor}">
+                                ${state.combo}X STREAK
+                            </div>
+                        ` : ''}
+                    </div>
+                    <button id="pause-btn" class="btn btn-glass" style="width: 54px; height: 54px; position: absolute; top: 40px; right: 40px; border-radius: 50%; padding: 0;">⏸</button>
+                `;
+                this.root.appendChild(hud);
+                const btn = document.getElementById('pause-btn');
+                if(btn) btn.onclick = (e) => { e.stopPropagation(); pauseGame(); };
+            },
+            renderGameOver() {
+                const overlay = document.createElement('div');
+                overlay.className = 'overlay';
+                overlay.innerHTML = `
+                    <div class="glass-panel">
+                        <h2 style="font-size: 2.2rem; color: #ff0070; font-weight: 900; text-shadow: 0 0 20px rgba(255,0,112,0.4)">CRASHED!</h2>
+                        <div style="display: flex; justify-content: space-around; margin: 30px 0;">
+                            <div>
+                                <p style="font-size: 0.7rem; opacity: 0.5; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;">Score</p>
+                                <p style="font-size: 2.5rem; font-weight: 900;">${state.score}</p>
+                            </div>
+                            <div>
+                                <p style="font-size: 0.7rem; opacity: 0.5; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;">Max Streak</p>
+                                <p style="font-size: 2.5rem; font-weight: 900; color: #ff00ff;">${state.maxSessionCombo}</p>
+                            </div>
+                        </div>
+                        <button id="restart-btn" class="btn btn-cta">RE-ATTEMPT</button>
+                        <button id="menu-btn" class="btn btn-glass">MAIN MENU</button>
+                    </div>
+                `;
+                this.root.appendChild(overlay);
+                const rsBtn = document.getElementById('restart-btn');
+                const mBtn = document.getElementById('menu-btn');
+                if (rsBtn) rsBtn.onclick = (e) => { e.stopPropagation(); restartGame(); };
+                if (mBtn) mBtn.onclick = (e) => { e.stopPropagation(); backToMenu(); };
+            },
+            renderPaused() {
+                const overlay = document.createElement('div');
+                overlay.className = 'overlay';
+                overlay.innerHTML = `
+                    <div class="glass-panel">
+                        <h2 style="font-weight: 900; font-size: 2.5rem; letter-spacing: 0.1em;">PAUSED</h2>
+                        <button id="resume-btn" class="btn btn-cta">RESUME</button>
+                        <button id="menu-btn" class="btn btn-glass">QUIT</button>
+                    </div>
+                `;
+                this.root.appendChild(overlay);
+                const resBtn = document.getElementById('resume-btn');
+                const qBtn = document.getElementById('menu-btn');
+                if(resBtn) resBtn.onclick = (e) => { e.stopPropagation(); resumeGame(); };
+                if(qBtn) qBtn.onclick = (e) => { e.stopPropagation(); backToMenu(); };
             }
         };
 
-        let scene, camera, renderer, pointLight, starField;
-        let shakeAmount = 0, shakeDuration = 0;
+        let scene, camera, renderer, composer, pointLight, nebula;
+        let starLayerBack, starLayerMid, rubbleInstances;
 
-        function initEngine() {
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x010103);
-            scene.fog = new THREE.FogExp2(0x010103, 0.03);
-
-            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(12, 12, 12);
-            camera.lookAt(0, 0, 0);
-
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            renderer.toneMapping = THREE.LinearToneMapping;
-            renderer.toneMappingExposure = 1.2;
-            document.getElementById('root').appendChild(renderer.domElement);
-
-            scene.add(new THREE.AmbientLight(0xffffff, 0.4));
-            pointLight = new THREE.PointLight(0x00ffff, 5, 20);
-            scene.add(pointLight);
-
-            // STARRY BACKGROUND FIX: Fog must be disabled for stars to be visible at distance
-            const starCount = 1200;
-            const starGeometry = new THREE.BufferGeometry();
-            const positions = new Float32Array(starCount * 3);
-            const colors = new Float32Array(starCount * 3);
-            const colorChoices = [
-                new THREE.Color(0x00ffff), 
-                new THREE.Color(0xff00ff), 
-                new THREE.Color(0xffffff), 
-                new THREE.Color(0x4444ff),
-                new THREE.Color(0x00ffaa)
-            ];
-
-            for(let i = 0; i < starCount; i++) {
-                const r = 80 + Math.random() * 250;
-                const theta = Math.random() * Math.PI * 2;
-                const phi = Math.random() * Math.PI;
-                
-                positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-                positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-                positions[i * 3 + 2] = r * Math.cos(phi);
-
-                const c = colorChoices[Math.floor(Math.random() * colorChoices.length)];
-                colors[i * 3] = c.r;
-                colors[i * 3 + 1] = c.g;
-                colors[i * 3 + 2] = c.b;
+        async function initGameData() {
+            try {
+                const localBest = localStorage.getItem('stack_best');
+                const localStreak = localStorage.getItem('stack_best_streak');
+                state.bestScore = localBest ? parseInt(localBest) : 0;
+                state.bestStreak = localStreak ? parseInt(localStreak) : 0;
+            } catch(e) { 
+                state.bestScore = 0; 
+                state.bestStreak = 0;
             }
-
-            starGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            starGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
             
-            const starMaterial = new THREE.PointsMaterial({
-                size: 1.2,
-                vertexColors: true,
-                transparent: true,
-                opacity: 0.9,
-                sizeAttenuation: true,
-                fog: false // CRITICAL: Stars should not fade with scene fog
-            });
-
-            starField = new THREE.Points(starGeometry, starMaterial);
-            scene.add(starField);
-
-            createFoundation();
-            state.lastTime = performance.now();
-            animate(state.lastTime);
-            
-            window.addEventListener('resize', () => {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-            });
-
-            const handleAction = (e) => {
-                if (e.target.tagName === 'BUTTON') return;
-                
-                if (e) e.preventDefault();
-                AudioService.init();
-                if (state.status === 'START') {
-                    state.status = 'PLAYING';
-                    spawnNewBlock();
-                } else if (state.status === 'PLAYING') {
-                    placeBlock();
-                }
-                UIManager.render();
-            };
-            window.addEventListener('mousedown', handleAction);
-            window.addEventListener('touchstart', handleAction, { passive: false });
+            const loader = document.getElementById('loader-fill');
+            if(loader) loader.style.width = '100%';
+            await new Promise(r => setTimeout(r, 600));
+            const screen = document.getElementById('loading-screen');
+            if(screen) screen.style.display = 'none';
+            state.status = 'START';
+            UIManager.render();
         }
 
-        function createGlassMaterial(color, isBase = false) {
+        function initEngine() {
+            try {
+                scene = new THREE.Scene();
+                scene.background = new THREE.Color(0x000005);
+                scene.fog = new THREE.FogExp2(0x000005, 0.008); 
+
+                camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+                
+                renderer = new THREE.WebGLRenderer({ 
+                    antialias: true, 
+                    powerPreference: "high-performance"
+                });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                renderer.toneMappingExposure = 1.0;
+                const container = document.getElementById('root');
+                if(container) container.appendChild(renderer.domElement);
+
+                composer = new EffectComposer(renderer);
+                composer.addPass(new RenderPass(scene, camera));
+                
+                try {
+                    const bloomPass = new UnrealBloomPass(
+                        new THREE.Vector2(window.innerWidth / 2, window.innerHeight / 2), 
+                        1.2, 0.4, 0.85
+                    );
+                    composer.addPass(bloomPass);
+                } catch(e) {}
+                
+                composer.addPass(new OutputPass());
+
+                scene.add(new THREE.AmbientLight(0xffffff, 0.4)); 
+                scene.add(new THREE.HemisphereLight(0x00ffff, 0xff00ff, 0.5));
+                pointLight = new THREE.PointLight(0x00ffff, 6, 60);
+                pointLight.decay = 2;
+                scene.add(pointLight);
+
+                const nebulaGeom = new THREE.SphereGeometry(400, 32, 32);
+                const nebulaMat = new THREE.MeshBasicMaterial({ 
+                    side: THREE.BackSide, vertexColors: true, transparent: true, opacity: 0.1, fog: false 
+                });
+                const count = nebulaGeom.attributes.position.count;
+                const colors = new Float32Array(count * 3);
+                for(let i=0; i<count; i++) {
+                    const c = new THREE.Color().setHSL(Math.random() * 0.1 + 0.6, 0.7, 0.3);
+                    colors[i*3] = c.r; colors[i*3+1] = c.g; colors[i*3+2] = c.b;
+                }
+                nebulaGeom.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+                nebula = new THREE.Mesh(nebulaGeom, nebulaMat);
+                scene.add(nebula);
+
+                starLayerBack = createStarfield(12000, 0.4, 250, 0.5, true);
+                scene.add(starLayerBack);
+
+                starLayerMid = createStarfield(4000, 0.7, 180, 0.8, true);
+                scene.add(starLayerMid);
+
+                const rubbleGeom = new THREE.BoxGeometry(1, 1, 1);
+                const rubbleMat = new THREE.MeshPhysicalMaterial({
+                    metalness: 0.2, 
+                    roughness: 0.1,
+                    transmission: 0.4, 
+                    transparent: true,
+                    opacity: 0.6
+                });
+                rubbleInstances = new THREE.InstancedMesh(rubbleGeom, rubbleMat, CONFIG.MAX_RUBBLE);
+                rubbleInstances.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+                for (let i = 0; i < CONFIG.MAX_RUBBLE; i++) {
+                    const matrix = new THREE.Matrix4().makeTranslation(0, -100, 0);
+                    rubbleInstances.setMatrixAt(i, matrix);
+                    state.rubbleData[i] = { isActive: false };
+                }
+                scene.add(rubbleInstances);
+
+                createFoundation();
+                state.lastTime = performance.now();
+                requestAnimationFrame(animate);
+
+                window.addEventListener('resize', () => {
+                    camera.aspect = window.innerWidth / window.innerHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    if (composer) composer.setSize(window.innerWidth, window.innerHeight);
+                });
+
+                const handleInput = (e) => {
+                    if (state.status !== 'PLAYING') return;
+                    if (e.target.tagName === 'BUTTON' || (e.target.closest && e.target.closest('.glass-panel'))) return;
+                    placeBlock();
+                };
+                window.addEventListener('mousedown', (e) => { if (e.button === 0) handleInput(e); });
+                window.addEventListener('touchstart', (e) => {
+                    if (e.target.tagName === 'BUTTON' || (e.target.closest && e.target.closest('.glass-panel'))) return;
+                    handleInput(e);
+                }, { passive: false });
+            } catch(err) {
+                console.error("Engine failure:", err);
+            }
+        }
+
+        function createStarfield(count, size, dist, opacity, isDistant) {
+            const geom = new THREE.BufferGeometry();
+            const pos = new Float32Array(count * 3);
+            const cols = new Float32Array(count * 3);
+            for (let i = 0; i < count; i++) {
+                const r = dist + (isDistant ? Math.random() * 120 : Math.random() * 60);
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(2 * Math.random() - 1);
+                pos[i*3] = r * Math.sin(phi) * Math.cos(theta);
+                pos[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+                pos[i*3+2] = r * Math.cos(phi);
+                
+                const brightness = 0.5 + Math.random() * 0.5;
+                const color = new THREE.Color();
+                if (Math.random() > 0.8) color.setHSL(Math.random() * 0.1 + 0.55, 0.5, brightness);
+                else color.setHSL(0, 0, brightness);
+                cols[i*3] = color.r; cols[i*3+1] = color.g; cols[i*3+2] = color.b;
+            }
+            geom.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+            geom.setAttribute('color', new THREE.BufferAttribute(cols, 3));
+            return new THREE.Points(geom, new THREE.PointsMaterial({
+                size, vertexColors: true, transparent: true, opacity, sizeAttenuation: true, fog: false
+            }));
+        }
+
+        function createGlassMaterial(color) {
             return new THREE.MeshPhysicalMaterial({
-                color: color, emissive: color,
-                emissiveIntensity: isBase ? 0.5 : 0.8,
-                metalness: 0, roughness: 0.1,
-                transmission: 0.9, thickness: 0.5,
-                ior: 1.5, transparent: true, opacity: 1
+                color: color, 
+                emissive: color, 
+                emissiveIntensity: 0.8,
+                metalness: 0.2, 
+                roughness: 0.1,
+                transmission: 0.85, 
+                thickness: 1.5, 
+                ior: 1.45, 
+                clearcoat: 0.8, 
+                reflectivity: 0.4,
+                transparent: true, 
+                opacity: 0.9
             });
         }
 
         function createFoundation() {
             const geom = new THREE.BoxGeometry(CONFIG.INITIAL_SIZE, CONFIG.BLOCK_HEIGHT, CONFIG.INITIAL_SIZE);
-            const mat = createGlassMaterial(new THREE.Color(0x00ffff), true);
+            const mat = createGlassMaterial(new THREE.Color(0x00ffff));
+            mat.emissiveIntensity = 1.2; 
             const mesh = new THREE.Mesh(geom, mat);
             scene.add(mesh);
             state.stack.push(mesh);
         }
 
         function spawnNewBlock() {
-            if (state.status !== 'PLAYING') return;
+            if (state.stack.length === 0) return;
             const prev = state.stack[state.stack.length - 1];
-            const prevSize = prev.geometry.parameters;
             state.axis = state.axis === 'x' ? 'z' : 'x';
-            
-            const hue = (state.stack.length * 0.1) % 1;
-            const color = new THREE.Color().setHSL(hue, 0.8, 0.6);
-            const geom = new THREE.BoxGeometry(prevSize.width, CONFIG.BLOCK_HEIGHT, prevSize.depth);
+            const colorIndex = state.stack.length % state.currentTheme.colors.length;
+            const color = new THREE.Color(state.currentTheme.colors[colorIndex]);
+            const geom = new THREE.BoxGeometry(prev.geometry.parameters.width, CONFIG.BLOCK_HEIGHT, prev.geometry.parameters.depth);
             const mat = createGlassMaterial(color);
             const mesh = new THREE.Mesh(geom, mat);
-            
             mesh.position.y = state.stack.length * CONFIG.BLOCK_HEIGHT;
             const offset = Math.random() > 0.5 ? 12 : -12;
             state.direction = offset > 0 ? -1 : 1;
-            
-            if (state.axis === 'x') {
-                mesh.position.x = offset;
-                mesh.position.z = prev.position.z;
-            } else {
-                mesh.position.z = offset;
-                mesh.position.x = prev.position.x;
-            }
-
+            mesh.position[state.axis] = offset;
+            mesh.position[state.axis === 'x' ? 'z' : 'x'] = prev.position[state.axis === 'x' ? 'z' : 'x'];
             scene.add(mesh);
             state.activeBlock = mesh;
-            pointLight.color.copy(color);
-            pointLight.intensity = 5;
         }
 
         function placeBlock() {
-            if (!state.activeBlock) return;
+            if (!state.activeBlock || state.status !== 'PLAYING') return;
             const active = state.activeBlock;
             const prev = state.stack[state.stack.length - 1];
             const axis = state.axis;
@@ -382,53 +605,35 @@
             const absDelta = Math.abs(delta);
             const overlap = size - absDelta;
 
-            if (overlap <= 0.05) {
-                gameOver();
-                return;
-            }
+            if (overlap <= 0.05) { gameOver(); return; }
 
-            const isPerfect = absDelta < CONFIG.PERFECT_THRESHOLD;
-            let finalPos = prev.position[axis] + delta / 2;
-            let newSize = size;
+            const threshold = state.stack.length <= CONFIG.MERCY_COUNT ? CONFIG.MERCY_THRESHOLD : CONFIG.PERFECT_THRESHOLD;
+            const isPerfect = absDelta < threshold;
 
             if (isPerfect) {
-                finalPos = prev.position[axis];
+                active.position[axis] = prev.position[axis];
                 state.combo++;
-                if (state.combo >= 5) newSize = Math.min(CONFIG.INITIAL_SIZE, size + 0.2);
+                if (state.combo > state.maxSessionCombo) state.maxSessionCombo = state.combo;
+                state.flash = 0.5; 
                 AudioService.playNote(state.stack.length, true);
-                spawnPulseRing(active.position, active.material.color);
-                shakeAmount = 0.3; shakeDuration = 200;
             } else {
                 state.combo = 0;
-                newSize = overlap;
-                AudioService.playNote(state.stack.length, false);
                 spawnRubble(active, prev, axis, delta, overlap);
+                active.geometry.dispose();
+                const other = axis === 'x' ? active.geometry.parameters.depth : active.geometry.parameters.width;
+                active.geometry = axis === 'x' 
+                    ? new THREE.BoxGeometry(overlap, CONFIG.BLOCK_HEIGHT, other)
+                    : new THREE.BoxGeometry(other, CONFIG.BLOCK_HEIGHT, overlap);
+                active.position[axis] = prev.position[axis] + delta / 2;
+                AudioService.playNote(state.stack.length, false);
             }
-
-            const otherSize = axis === 'x' ? active.geometry.parameters.depth : active.geometry.parameters.width;
-            const newGeom = axis === 'x' 
-                ? new THREE.BoxGeometry(newSize, CONFIG.BLOCK_HEIGHT, otherSize)
-                : new THREE.BoxGeometry(otherSize, CONFIG.BLOCK_HEIGHT, newSize);
-            
-            active.geometry.dispose();
-            active.geometry = newGeom;
-            active.position[axis] = finalPos;
-
-            const glow = 1 + (state.combo * 0.4);
-            active.material.emissiveIntensity = glow * 3;
-            setTimeout(() => { if(active.material) active.material.emissiveIntensity = glow; }, 100);
 
             state.stack.push(active);
             state.activeBlock = null;
             state.score++;
             state.speed = Math.min(CONFIG.MAX_SPEED, state.speed + CONFIG.SPEED_INC);
             
-            const ty = state.stack.length * CONFIG.BLOCK_HEIGHT;
-            camera.position.y = 12 + ty;
-            camera.lookAt(0, ty - 2, 0);
-            camera.fov = 45 + Math.min(10, state.combo * 0.8);
-            camera.updateProjectionMatrix();
-
+            UIManager.render();
             spawnNewBlock();
         }
 
@@ -437,114 +642,184 @@
             const size = axis === 'x' ? params.width : params.depth;
             const other = axis === 'x' ? params.depth : params.width;
             const rSize = size - overlap;
-            
-            const geom = axis === 'x' 
-                ? new THREE.BoxGeometry(rSize, CONFIG.BLOCK_HEIGHT, other)
-                : new THREE.BoxGeometry(other, CONFIG.BLOCK_HEIGHT, rSize);
-            const mat = active.material.clone();
-            mat.transmission = 0.4;
-            const mesh = new THREE.Mesh(geom, mat);
-            
-            const shift = (overlap / 2 + rSize / 2) * Math.sign(delta);
-            mesh.position.copy(active.position);
-            mesh.position[axis] = prev.position[axis] + shift;
-            scene.add(mesh);
-            state.rubble.push(mesh);
-        }
 
-        function spawnPulseRing(pos, color) {
-            const ring = new THREE.Mesh(
-                new THREE.TorusGeometry(CONFIG.INITIAL_SIZE/2, 0.05, 12, 24),
-                new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.8 })
-            );
-            ring.position.copy(pos);
-            ring.rotation.x = Math.PI/2;
-            scene.add(ring);
-            state.effects.push(ring);
+            const idx = state.rubbleData.findIndex(r => !r.isActive);
+            if (idx === -1) return;
+
+            const rScale = axis === 'x' ? new THREE.Vector3(rSize, CONFIG.BLOCK_HEIGHT, other) : new THREE.Vector3(other, CONFIG.BLOCK_HEIGHT, rSize);
+            const rPos = active.position.clone();
+            rPos[axis] = prev.position[axis] + (overlap / 2 + rSize / 2) * Math.sign(delta);
+
+            state.rubbleData[idx] = {
+                isActive: true,
+                position: rPos,
+                rotation: new THREE.Euler(0, 0, 0),
+                scale: rScale,
+                velocity: new THREE.Vector3(0, -5, 0),
+                angularVelocity: new THREE.Euler(Math.random() * 5, 0, Math.random() * 5),
+                color: active.material.color.clone()
+            };
+            rubbleInstances.setColorAt(idx, active.material.color);
+            rubbleInstances.instanceColor.needsUpdate = true;
         }
 
         function gameOver() {
             state.status = 'GAMEOVER';
+            let updateNeeded = false;
             if (state.score > state.bestScore) {
                 state.bestScore = state.score;
-                localStorage.setItem('stack_snap_best_score', state.bestScore.toString());
+                try { localStorage.setItem('stack_best', state.bestScore.toString()); } catch(e) {}
+                updateNeeded = true;
+            }
+            if (state.maxSessionCombo > state.bestStreak) {
+                state.bestStreak = state.maxSessionCombo;
+                try { localStorage.setItem('stack_best_streak', state.bestStreak.toString()); } catch(e) {}
+                updateNeeded = true;
             }
             AudioService.playGameOver();
-            shakeAmount = 1.5; shakeDuration = 600;
             UIManager.render();
         }
 
-        function restartGame() {
-            state.stack.forEach(m => { scene.remove(m); m.geometry.dispose(); m.material.dispose(); });
-            state.rubble.forEach(m => { scene.remove(m); m.geometry.dispose(); m.material.dispose(); });
-            state.effects.forEach(m => { scene.remove(m); m.geometry.dispose(); m.material.dispose(); });
-            if (state.activeBlock) { scene.remove(state.activeBlock); state.activeBlock.geometry.dispose(); state.activeBlock.material.dispose(); }
-            
-            state.stack = []; state.rubble = []; state.effects = []; state.activeBlock = null;
-            state.score = 0; state.combo = 0; state.speed = CONFIG.SPEED_INITIAL;
-            state.axis = 'x'; state.status = 'PLAYING';
-            shakeAmount = 0; shakeDuration = 0;
-            state.lastTime = performance.now();
-            
-            camera.position.set(12, 12, 12);
-            camera.lookAt(0,0,0);
-            camera.fov = 45; camera.updateProjectionMatrix();
-            
+        function startGame() {
+            cleanup();
+            AudioService.init();
+            state.status = 'PLAYING';
+            state.score = 0; 
+            state.combo = 0; 
+            state.maxSessionCombo = 0;
+            state.speed = CONFIG.SPEED_INITIAL;
+            state.axis = 'x';
+            state.camPos.set(14, 8, 14);
+            state.camTarget.set(14, 8, 14);
+            state.lookTarget.set(0, 2, 0);
             createFoundation();
-            spawnNewBlock();
             UIManager.render();
+            spawnNewBlock();
+        }
+
+        function pauseGame() { state.status = 'PAUSED'; UIManager.render(); }
+        function resumeGame() { state.status = 'PLAYING'; state.lastTime = performance.now(); UIManager.render(); }
+        function restartGame() { startGame(); }
+        
+        function backToMenu() { 
+            cleanup(); 
+            state.status = 'START'; 
+            createFoundation(); 
+            updateThemeVisuals(); 
+            UIManager.render(); 
+        }
+
+        function cleanup() {
+            state.stack.forEach(m => { scene.remove(m); if (m.geometry) m.geometry.dispose(); if (m.material) m.material.dispose(); });
+            if (state.activeBlock) { scene.remove(state.activeBlock); if (state.activeBlock.geometry) state.activeBlock.geometry.dispose(); if (state.activeBlock.material) state.activeBlock.material.dispose(); }
+            state.stack = []; state.activeBlock = null;
+            for (let i = 0; i < CONFIG.MAX_RUBBLE; i++) {
+                state.rubbleData[i].isActive = false;
+                const matrix = new THREE.Matrix4().makeTranslation(0, -100, 0);
+                rubbleInstances.setMatrixAt(i, matrix);
+            }
+            rubbleInstances.instanceMatrix.needsUpdate = true;
+        }
+
+        function updateThemeVisuals() {
+            if (!state.currentTheme) return;
+            state.stack.forEach((m, i) => {
+                const c = new THREE.Color(state.currentTheme.colors[i % state.currentTheme.colors.length]);
+                m.material.color.copy(c);
+                m.material.emissive.copy(c);
+            });
         }
 
         function animate(time) {
             requestAnimationFrame(animate);
-            
-            const deltaTime = time - state.lastTime;
+            if (!state.lastTime) state.lastTime = time;
+            const dt = Math.min((time - state.lastTime) / 1000, 0.04); 
             state.lastTime = time;
-            const dt = deltaTime / 16.666;
 
-            if (starField) {
-                starField.rotation.y += 0.0004 * dt;
-                starField.rotation.x += 0.0002 * dt;
-            }
-
-            if (state.status === 'PLAYING' && state.activeBlock) {
-                state.activeBlock.position[state.axis] += state.direction * state.speed * dt;
-                if (Math.abs(state.activeBlock.position[state.axis]) > 13) state.direction *= -1;
-                pointLight.position.copy(state.activeBlock.position);
-                pointLight.position.y += 2;
-            }
-
-            state.rubble = state.rubble.filter(r => {
-                r.position.y -= 0.3 * dt;
-                r.rotation.x += 0.1 * dt;
-                if (r.position.y < -40) { scene.remove(r); return false; }
-                return true;
-            });
-
-            state.effects = state.effects.filter(e => {
-                e.scale.addScalar(0.2 * dt);
-                e.material.opacity -= 0.05 * dt;
-                if (e.material.opacity <= 0) { scene.remove(e); return false; }
-                return true;
-            });
-
-            if (shakeDuration > 0) {
-                const shake = (Math.random() - 0.5) * shakeAmount;
-                camera.position.x += shake;
-                camera.position.z += shake;
-                shakeDuration -= deltaTime;
-                if (shakeDuration <= 0) {
-                    const ty = state.stack.length * CONFIG.BLOCK_HEIGHT;
-                    camera.position.set(12, 12 + ty, 12);
-                    camera.lookAt(0, ty - 2, 0);
+            try {
+                if (nebula) nebula.rotation.y += 0.01 * dt;
+                
+                if (starLayerMid) {
+                    starLayerMid.material.opacity = 0.6 + Math.sin(time * 0.003) * 0.2;
+                    starLayerMid.rotation.y += 0.003 * dt;
                 }
-            }
+                if (starLayerBack) starLayerBack.rotation.y += 0.001 * dt;
+                
+                if (state.status === 'START') {
+                    state.cameraOrbit += 0.12 * dt;
+                    state.camTarget.set(16 * Math.cos(state.cameraOrbit), 8, 16 * Math.sin(state.cameraOrbit));
+                    state.lookTarget.set(0, 2, 0);
+                    camera.position.lerp(state.camTarget, 0.035);
+                    camera.lookAt(state.lookTarget);
+                } else {
+                    const stackHeight = state.stack.length * CONFIG.BLOCK_HEIGHT;
+                    const targetCamHeight = stackHeight + 7.5;
+                    state.camTarget.set(13, targetCamHeight, 13);
+                    state.lookTarget.lerp(new THREE.Vector3(0, stackHeight, 0), CONFIG.CAMERA_LERP);
+                    camera.position.lerp(state.camTarget, CONFIG.CAMERA_LERP);
+                    camera.lookAt(state.lookTarget.x, state.lookTarget.y - 2.8, state.lookTarget.z);
+                }
 
-            renderer.render(scene, camera);
+                if (state.flash > 0) {
+                    renderer.toneMappingExposure = 1.0 + state.flash * 0.6;
+                    state.flash -= 2.0 * dt;
+                } else {
+                    renderer.toneMappingExposure = 1.0;
+                }
+
+                if (state.status === 'PLAYING' && state.activeBlock) {
+                    const moveAmount = state.direction * state.speed * (dt * 60);
+                    state.activeBlock.position[state.axis] += moveAmount;
+                    if (Math.abs(state.activeBlock.position[state.axis]) > 13) {
+                        state.direction *= -1;
+                        state.activeBlock.position[state.axis] = 13 * Math.sign(state.activeBlock.position[state.axis]);
+                    }
+                    pointLight.position.copy(state.activeBlock.position).y += 2.5;
+                    pointLight.color.copy(state.activeBlock.material.color);
+                    pointLight.intensity = 8 + (state.flash * 8);
+                }
+
+                let rubbleNeedsUpdate = false;
+                for (let i = 0; i < CONFIG.MAX_RUBBLE; i++) {
+                    const r = state.rubbleData[i];
+                    if (r.isActive) {
+                        r.position.y += r.velocity.y * (dt * 5);
+                        r.velocity.y -= 10 * dt; 
+                        r.rotation.x += r.angularVelocity.x * dt;
+                        r.rotation.z += r.angularVelocity.z * dt;
+                        
+                        if (r.position.y < -50) {
+                            r.isActive = false;
+                            const matrix = new THREE.Matrix4().makeTranslation(0, -100, 0);
+                            rubbleInstances.setMatrixAt(i, matrix);
+                        } else {
+                            const matrix = new THREE.Matrix4();
+                            const position = new THREE.Vector3().copy(r.position);
+                            const quaternion = new THREE.Quaternion().setFromEuler(r.rotation);
+                            const scale = new THREE.Vector3().copy(r.scale);
+                            matrix.compose(position, quaternion, scale);
+                            rubbleInstances.setMatrixAt(i, matrix);
+                        }
+                        rubbleNeedsUpdate = true;
+                    }
+                }
+                if (rubbleNeedsUpdate) {
+                    rubbleInstances.instanceMatrix.needsUpdate = true;
+                }
+
+                if (composer) composer.render();
+            } catch(loopErr) {
+                console.warn("Loop error", loopErr);
+            }
         }
 
-        initEngine();
-        UIManager.render();
+        const boot = async () => {
+            if (document.readyState === 'loading') { await new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve)); }
+            initEngine();
+            await initGameData();
+        };
+
+        boot();
     </script>
 </body>
 </html>
