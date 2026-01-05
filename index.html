@@ -28,7 +28,7 @@
             font-family: 'Inter', -apple-system, sans-serif;
             -webkit-tap-highlight-color: transparent;
             user-select: none; color: white;
-            touch-action: none; /* Prevent browser gestures interfering */
+            touch-action: none;
         }
         #root { position: absolute; inset: 0; z-index: 1; }
         #ui-root {
@@ -43,7 +43,7 @@
         }
         .hud {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; padding: 40px; box-sizing: border-box;
+            pointer-events: none; padding: 20px; box-sizing: border-box;
             display: flex; flex-direction: column; align-items: center;
         }
         .hud-top-center { text-align: center; pointer-events: none; margin-top: 20px; }
@@ -52,24 +52,24 @@
             background: var(--glass-bg);
             border: 1px solid var(--glass-border);
             backdrop-filter: blur(32px); -webkit-backdrop-filter: blur(32px);
-            border-radius: 40px; padding: 30px; text-align: center;
+            border-radius: 32px; padding: 25px; text-align: center;
             box-shadow: 0 40px 80px rgba(0,0,0,0.6);
             width: 85%; max-width: 380px;
             pointer-events: auto;
         }
         .btn {
-            padding: 20px 32px; border-radius: 20px; font-weight: 800; font-size: 1.1rem;
+            padding: 16px 24px; border-radius: 16px; font-weight: 800; font-size: 1rem;
             transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             pointer-events: auto; cursor: pointer; border: none; outline: none;
-            width: 100%; margin: 10px 0; display: block; text-transform: uppercase;
-            letter-spacing: 0.15em;
+            width: 100%; margin: 8px 0; display: block; text-transform: uppercase;
+            letter-spacing: 0.1em;
         }
         .btn-glass { background: rgba(255, 255, 255, 0.08); color: white; border: 1px solid rgba(255,255,255,0.1); }
         .btn-cta { background: var(--neon-cyan); color: #000; box-shadow: 0 0 30px rgba(0,255,255,0.4); }
         .btn:active { transform: scale(0.92); }
         
         .score-huge { 
-            font-size: 5.5rem; 
+            font-size: 5rem; 
             font-weight: 900; 
             margin: 0; 
             line-height: 1; 
@@ -78,12 +78,8 @@
         }
 
         .combo-popup {
-            font-size: 2.8rem;
-            font-weight: 900;
-            font-style: italic;
-            text-transform: uppercase;
-            letter-spacing: -0.05em;
-            margin-top: 5px;
+            font-size: 2.5rem; font-weight: 900; font-style: italic;
+            text-transform: uppercase; letter-spacing: -0.05em; margin-top: 5px;
             animation: comboIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
             filter: drop-shadow(0 0 25px currentColor);
         }
@@ -95,13 +91,8 @@
         }
 
         .streak-counter {
-            font-size: 1rem;
-            font-weight: 800;
-            letter-spacing: 0.4em;
-            opacity: 1;
-            margin-top: 5px;
-            text-transform: uppercase;
-            text-shadow: 0 0 15px rgba(255,255,255,0.5);
+            font-size: 0.9rem; font-weight: 800; letter-spacing: 0.3em;
+            opacity: 1; margin-top: 5px; text-transform: uppercase;
         }
         
         #loading-screen {
@@ -111,45 +102,49 @@
         .loader-bar { width: 240px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 24px; overflow: hidden; }
         .loader-fill { width: 0%; height: 100%; background: var(--neon-cyan); transition: width 0.4s; }
         
+        .selector-label { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.2em; opacity: 0.5; margin: 15px 0 8px; display: block;}
+
         .theme-grid {
-            display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
-            margin: 20px 0; max-height: 200px; overflow-y: auto; padding: 10px;
+            display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;
+            margin-bottom: 10px; padding: 5px;
         }
         .theme-item {
-            aspect-ratio: 1; border-radius: 14px; border: 2px solid transparent;
+            aspect-ratio: 1; border-radius: 10px; border: 2px solid transparent;
             cursor: pointer; position: relative; display: flex; align-items: center; justify-content: center;
             background: rgba(255,255,255,0.05); overflow: hidden; transition: 0.2s;
         }
-        .theme-item.selected { border-color: var(--neon-cyan); transform: scale(1.05); }
+        .theme-item.selected { border-color: var(--neon-cyan); transform: scale(1.1); box-shadow: 0 0 15px rgba(0,255,255,0.3); }
         .theme-item.locked { opacity: 0.2; filter: grayscale(1); cursor: default; }
 
+        .difficulty-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;
+        }
+        .diff-item {
+            padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.05);
+            font-size: 0.75rem; font-weight: 800; letter-spacing: 0.05em; cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.1); transition: 0.2s;
+        }
+        .diff-item.selected { 
+            background: rgba(0,255,255,0.15); border-color: var(--neon-cyan); 
+            color: var(--neon-cyan); box-shadow: inset 0 0 10px rgba(0,255,255,0.1);
+        }
+
+        .floating-controls {
+            position: absolute; top: 20px; right: 20px; display: flex; gap: 10px; pointer-events: auto;
+        }
+        .round-btn {
+            width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px); color: white; cursor: pointer; transition: 0.2s;
+        }
+        .round-btn:active { transform: scale(0.9); }
+        .round-btn.active { border-color: var(--neon-cyan); color: var(--neon-cyan); }
+
         .unlock-badge {
-            font-size: 0.6rem; font-weight: 900; color: #fff;
-            background: rgba(0,0,0,0.8); padding: 4px 6px; border-radius: 6px;
-            position: absolute; bottom: 4px; right: 4px;
-            letter-spacing: 0.1em; pointer-events: none;
+            font-size: 0.5rem; font-weight: 900; color: #fff;
+            background: rgba(0,0,0,0.8); padding: 2px 4px; border-radius: 4px;
+            position: absolute; bottom: 2px; right: 2px;
         }
-
-        .milestone-container {
-            margin: 15px 0; padding: 12px; background: rgba(255,255,255,0.03);
-            border-radius: 16px; border: 1px dashed rgba(255,255,255,0.1);
-        }
-
-        .milestone-text {
-            font-size: 0.7rem; font-weight: 800; text-transform: uppercase;
-            letter-spacing: 0.15em; color: var(--neon-cyan); opacity: 0.9;
-            display: block; line-height: 1.4;
-        }
-
-        .best-stats-bar {
-            display: flex; justify-content: center; gap: 20px;
-            margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.05);
-            padding-bottom: 15px;
-        }
-        .stat-item { display: flex; flex-direction: column; align-items: center; }
-        .stat-label { font-size: 0.6rem; font-weight: 800; opacity: 0.5; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 4px; }
-        .stat-value { font-size: 1.4rem; font-weight: 900; color: #fff; }
-
     </style>
     <script type="importmap">
     {
@@ -183,18 +178,18 @@
             { id: 'ghost', name: 'GHOST', colors: ['#ffffff', '#cccccc', '#999999'], unlock: 150 }
         ];
 
+        const DIFFICULTIES = {
+            easy: { name: 'EASY', initial: 0.12, inc: 0.003, max: 0.35, mercy: 8, threshold: 0.45 },
+            medium: { name: 'NORMAL', initial: 0.18, inc: 0.006, max: 0.50, mercy: 5, threshold: 0.35 },
+            hard: { name: 'HARD', initial: 0.25, inc: 0.012, max: 0.70, mercy: 2, threshold: 0.20 }
+        };
+
         const CONFIG = {
             BLOCK_HEIGHT: 1,
             INITIAL_SIZE: 4,
-            SPEED_INITIAL: 0.16,
-            SPEED_INC: 0.005,
-            MAX_SPEED: 0.45,
-            PERFECT_THRESHOLD: 0.15,
-            MERCY_COUNT: 5,
-            MERCY_THRESHOLD: 0.35,
             CAMERA_LERP: 0.1,
             MAX_RUBBLE: 100,
-            INPUT_COOLDOWN: 150 // ms to ignore subsequent taps
+            INPUT_COOLDOWN: 150
         };
 
         const state = {
@@ -205,9 +200,11 @@
             combo: 0,
             maxSessionCombo: 0,
             currentTheme: THEMES[0],
+            difficulty: 'medium',
+            isMuted: localStorage.getItem('stack_muted') === 'true',
             axis: 'x',
             direction: 1,
-            speed: CONFIG.SPEED_INITIAL,
+            speed: 0.18,
             stack: [],
             rubbleData: [], 
             activeBlock: null,
@@ -221,22 +218,18 @@
             lookTarget: new THREE.Vector3(0, 2, 0)
         };
 
-        // Reusable objects for animation performance
         const _v3 = new THREE.Vector3();
         const _q = new THREE.Quaternion();
         const _m4 = new THREE.Matrix4();
-        const _euler = new THREE.Euler();
 
         const AudioService = {
             ctx: null,
             scale: [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25],
             init() { 
-                try {
-                    if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); 
-                } catch(e) {}
+                try { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
             },
             playNote(step, isPerfect) {
-                if (!this.ctx) return;
+                if (!this.ctx || state.isMuted) return;
                 try {
                     if (this.ctx.state === 'suspended') this.ctx.resume();
                     const osc = this.ctx.createOscillator();
@@ -251,7 +244,7 @@
                 } catch(e) {}
             },
             playGameOver() {
-                if (!this.ctx) return;
+                if (!this.ctx || state.isMuted) return;
                 try {
                     const osc = this.ctx.createOscillator();
                     const gain = this.ctx.createGain();
@@ -276,73 +269,68 @@
                 if (combo < 15) return "GODLIKE!!!!";
                 return "UNSTOPPABLE!!!!!";
             },
+            toggleMute(e) {
+                if(e) e.stopPropagation();
+                state.isMuted = !state.isMuted;
+                localStorage.setItem('stack_muted', state.isMuted);
+                this.render();
+            },
             render() {
                 if (!this.root) this.root = document.getElementById('ui-root');
-                if (!this.root) return;
                 this.root.innerHTML = '';
-                try {
-                    if (state.status === 'START') this.renderStart();
-                    else if (state.status === 'PLAYING') this.renderHUD();
-                    else if (state.status === 'GAMEOVER') this.renderGameOver();
-                    else if (state.status === 'PAUSED') this.renderPaused();
-                } catch(e) { console.warn("UI Refresh failed", e); }
+                if (state.status === 'START') this.renderStart();
+                else if (state.status === 'PLAYING') this.renderHUD();
+                else if (state.status === 'GAMEOVER') this.renderGameOver();
+                else if (state.status === 'PAUSED') this.renderPaused();
+            },
+            renderMuteBtn() {
+                return `
+                    <div class="floating-controls">
+                        <div class="round-btn ${state.isMuted ? 'active' : ''}" onclick="window.gameToggleMute(event)">
+                            ${state.isMuted ? '🔇' : '🔊'}
+                        </div>
+                    </div>
+                `;
             },
             renderStart() {
                 const overlay = document.createElement('div');
                 overlay.className = 'overlay';
-                
-                const nextTheme = THEMES.find(t => state.bestScore < t.unlock);
-                const milestoneHTML = nextTheme 
-                    ? `<div class="milestone-container">
-                        <span class="milestone-text">Reach ${nextTheme.unlock} to unlock<br/>${nextTheme.name} Theme</span>
-                       </div>` 
-                    : `<div class="milestone-container"><span class="milestone-text" style="color:#00ff70">All Themes Unlocked!</span></div>`;
-
                 overlay.innerHTML = `
+                    ${this.renderMuteBtn()}
                     <div class="glass-panel">
-                        <h1 style="font-weight: 900; letter-spacing: -2px; margin: 0; font-size: 2.5rem; text-shadow: 0 0 20px var(--neon-cyan)">STACK & SNAP</h1>
-                        <p style="opacity: 0.5; font-size: 0.6rem; letter-spacing: 0.3em; font-weight: 800; margin-bottom: 25px; text-transform: uppercase;">Cosmic Glass Edition</p>
+                        <h1 style="font-weight: 900; letter-spacing: -1px; margin: 0; font-size: 2.2rem; text-shadow: 0 0 20px var(--neon-cyan)">STACK & SNAP</h1>
                         
-                        <div class="best-stats-bar">
-                            <div class="stat-item">
-                                <span class="stat-label">Best Score</span>
-                                <span class="stat-value">${state.bestScore}</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-label">Best Streak</span>
-                                <span class="stat-value" style="color: #ff00ff">${state.bestStreak}</span>
-                            </div>
+                        <div style="display: flex; justify-content: center; gap: 30px; margin: 15px 0 5px;">
+                            <div style="text-align: center"><span style="font-size: 0.6rem; opacity: 0.5; font-weight: 800; text-transform: uppercase;">Best</span><br><span style="font-size: 1.2rem; font-weight: 900;">${state.bestScore}</span></div>
+                            <div style="text-align: center"><span style="font-size: 0.6rem; opacity: 0.5; font-weight: 800; text-transform: uppercase;">Streak</span><br><span style="font-size: 1.2rem; font-weight: 900; color: #ff00ff;">${state.bestStreak}</span></div>
                         </div>
 
+                        <span class="selector-label">Difficulty</span>
+                        <div class="difficulty-grid">
+                            <div class="diff-item ${state.difficulty === 'easy' ? 'selected' : ''}" onclick="window.gameSetDiff('easy', event)">EASY</div>
+                            <div class="diff-item ${state.difficulty === 'medium' ? 'selected' : ''}" onclick="window.gameSetDiff('medium', event)">NORMAL</div>
+                            <div class="diff-item ${state.difficulty === 'hard' ? 'selected' : ''}" onclick="window.gameSetDiff('hard', event)">HARD</div>
+                        </div>
+
+                        <span class="selector-label">Theme</span>
                         <div class="theme-grid" id="theme-grid"></div>
-                        ${milestoneHTML}
-                        <button id="start-btn" class="btn btn-cta">START MISSION</button>
+                        
+                        <button id="start-btn" class="btn btn-cta" style="margin-top: 20px">ENTER VOID</button>
                     </div>
                 `;
                 this.root.appendChild(overlay);
                 this.populateThemes();
-                const btn = document.getElementById('start-btn');
-                if(btn) btn.onclick = (e) => { e.stopPropagation(); startGame(); };
+                document.getElementById('start-btn').onclick = (e) => { e.stopPropagation(); startGame(); };
             },
             populateThemes() {
                 const grid = document.getElementById('theme-grid');
-                if(!grid) return;
                 THEMES.forEach(t => {
                     const isLocked = state.bestScore < t.unlock;
                     const el = document.createElement('div');
                     el.className = `theme-item ${isLocked ? 'locked' : ''} ${state.currentTheme.id === t.id ? 'selected' : ''}`;
                     el.style.background = `linear-gradient(135deg, ${t.colors[0]}, ${t.colors[2]})`;
-                    
-                    if (isLocked) {
-                        el.innerHTML = `<span class="unlock-badge">${t.unlock}</span>`;
-                    } else {
-                        el.onclick = (e) => {
-                            e.stopPropagation();
-                            state.currentTheme = t;
-                            this.render();
-                            updateThemeVisuals();
-                        };
-                    }
+                    if (isLocked) el.innerHTML = `<span class="unlock-badge">${t.unlock}</span>`;
+                    else el.onclick = (e) => { e.stopPropagation(); state.currentTheme = t; this.render(); updateThemeVisuals(); };
                     grid.appendChild(el);
                 });
             },
@@ -354,66 +342,54 @@
                     <div class="hud-top-center">
                         <div class="score-huge" style="transform: scale(${1 + Math.min(state.combo * 0.05, 0.5)})">${state.score}</div>
                         ${state.combo > 0 ? `
-                            <div id="combo-popup" class="combo-popup" style="color: ${comboColor}">
-                                ${this.getComboTitle(state.combo)}
-                            </div>
-                            <div class="streak-counter" style="color: ${comboColor}">
-                                ${state.combo}X STREAK
-                            </div>
+                            <div class="combo-popup" style="color: ${comboColor}">${this.getComboTitle(state.combo)}</div>
+                            <div class="streak-counter" style="color: ${comboColor}">${state.combo}X STREAK</div>
                         ` : ''}
                     </div>
-                    <button id="pause-btn" class="btn btn-glass" style="width: 54px; height: 54px; position: absolute; top: 40px; right: 40px; border-radius: 50%; padding: 0;">⏸</button>
+                    <div class="round-btn" style="position: absolute; top: 20px; left: 20px; pointer-events: auto" onclick="window.gamePause(event)">⏸</div>
+                    ${this.renderMuteBtn()}
                 `;
                 this.root.appendChild(hud);
-                const btn = document.getElementById('pause-btn');
-                if(btn) btn.onclick = (e) => { e.stopPropagation(); pauseGame(); };
             },
             renderGameOver() {
                 const overlay = document.createElement('div');
                 overlay.className = 'overlay';
                 overlay.innerHTML = `
                     <div class="glass-panel">
-                        <h2 style="font-size: 2.2rem; color: #ff0070; font-weight: 900; text-shadow: 0 0 20px rgba(255,0,112,0.4)">CRASHED!</h2>
-                        <div style="display: flex; justify-content: space-around; margin: 30px 0;">
-                            <div>
-                                <p style="font-size: 0.7rem; opacity: 0.5; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;">Score</p>
-                                <p style="font-size: 2.5rem; font-weight: 900;">${state.score}</p>
-                            </div>
-                            <div>
-                                <p style="font-size: 0.7rem; opacity: 0.5; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;">Max Streak</p>
-                                <p style="font-size: 2.5rem; font-weight: 900; color: #ff00ff;">${state.maxSessionCombo}</p>
-                            </div>
+                        <h2 style="font-size: 2rem; color: #ff0070; font-weight: 900;">CRASHED!</h2>
+                        <div style="display: flex; justify-content: space-around; margin: 25px 0;">
+                            <div><p style="font-size: 0.6rem; opacity: 0.5; font-weight: 800; text-transform: uppercase;">Score</p><p style="font-size: 2rem; font-weight: 900;">${state.score}</p></div>
+                            <div><p style="font-size: 0.6rem; opacity: 0.5; font-weight: 800; text-transform: uppercase;">Best</p><p style="font-size: 2rem; font-weight: 900; color: var(--neon-cyan);">${state.bestScore}</p></div>
                         </div>
-                        <button id="restart-btn" class="btn btn-cta">RE-ATTEMPT</button>
-                        <button id="menu-btn" class="btn btn-glass">MAIN MENU</button>
+                        <button class="btn btn-cta" onclick="window.gameRestart(event)">RE-TRY</button>
+                        <button class="btn btn-glass" onclick="window.gameBackToMenu(event)">MENU</button>
                     </div>
                 `;
                 this.root.appendChild(overlay);
-                const rsBtn = document.getElementById('restart-btn');
-                const mBtn = document.getElementById('menu-btn');
-                if (rsBtn) rsBtn.onclick = (e) => { e.stopPropagation(); restartGame(); };
-                if (mBtn) mBtn.onclick = (e) => { e.stopPropagation(); backToMenu(); };
             },
             renderPaused() {
                 const overlay = document.createElement('div');
                 overlay.className = 'overlay';
                 overlay.innerHTML = `
                     <div class="glass-panel">
-                        <h2 style="font-weight: 900; font-size: 2.5rem; letter-spacing: 0.1em;">PAUSED</h2>
-                        <button id="resume-btn" class="btn btn-cta">RESUME</button>
-                        <button id="menu-btn" class="btn btn-glass">QUIT</button>
+                        <h2 style="font-weight: 900; font-size: 2.2rem;">PAUSED</h2>
+                        <button class="btn btn-cta" onclick="window.gameResume(event)">CONTINUE</button>
+                        <button class="btn btn-glass" onclick="window.gameBackToMenu(event)">QUIT</button>
                     </div>
                 `;
                 this.root.appendChild(overlay);
-                const resBtn = document.getElementById('resume-btn');
-                const qBtn = document.getElementById('menu-btn');
-                if(resBtn) resBtn.onclick = (e) => { e.stopPropagation(); resumeGame(); };
-                if(qBtn) qBtn.onclick = (e) => { e.stopPropagation(); backToMenu(); };
             }
         };
 
-        let scene, camera, renderer, composer, pointLight, nebula;
-        let starLayerBack, starLayerMid, rubbleInstances;
+        // Expose functions for onclick handlers in strings
+        window.gameToggleMute = (e) => UIManager.toggleMute(e);
+        window.gameSetDiff = (d, e) => { if(e) e.stopPropagation(); state.difficulty = d; UIManager.render(); };
+        window.gamePause = (e) => { if(e) e.stopPropagation(); state.status = 'PAUSED'; UIManager.render(); };
+        window.gameResume = (e) => { if(e) e.stopPropagation(); state.status = 'PLAYING'; state.lastTime = performance.now(); UIManager.render(); };
+        window.gameRestart = (e) => { if(e) e.stopPropagation(); startGame(); };
+        window.gameBackToMenu = (e) => { if(e) e.stopPropagation(); backToMenu(); };
+
+        let scene, camera, renderer, composer, pointLight, nebula, starLayerBack, starLayerMid, rubbleInstances;
 
         async function initGameData() {
             try {
@@ -421,150 +397,91 @@
                 const localStreak = localStorage.getItem('stack_best_streak');
                 state.bestScore = localBest ? parseInt(localBest) : 0;
                 state.bestStreak = localStreak ? parseInt(localStreak) : 0;
-            } catch(e) { 
-                state.bestScore = 0; 
-                state.bestStreak = 0;
-            }
-            
+            } catch(e) {}
             const loader = document.getElementById('loader-fill');
             if(loader) loader.style.width = '100%';
             await new Promise(r => setTimeout(r, 600));
-            const screen = document.getElementById('loading-screen');
-            if(screen) screen.style.display = 'none';
+            document.getElementById('loading-screen').style.display = 'none';
             state.status = 'START';
             UIManager.render();
         }
 
         function initEngine() {
-            try {
-                scene = new THREE.Scene();
-                scene.background = new THREE.Color(0x000005);
-                scene.fog = new THREE.FogExp2(0x000005, 0.008); 
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x000005);
+            scene.fog = new THREE.FogExp2(0x000005, 0.008); 
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            document.getElementById('root').appendChild(renderer.domElement);
 
-                camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-                
-                renderer = new THREE.WebGLRenderer({ 
-                    antialias: true, 
-                    powerPreference: "high-performance"
-                });
-                renderer.setSize(window.innerWidth, window.innerHeight);
-                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-                renderer.toneMapping = THREE.ACESFilmicToneMapping;
-                renderer.toneMappingExposure = 1.0;
-                const container = document.getElementById('root');
-                if(container) container.appendChild(renderer.domElement);
+            composer = new EffectComposer(renderer);
+            composer.addPass(new RenderPass(scene, camera));
+            const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth / 2, window.innerHeight / 2), 1.2, 0.4, 0.85);
+            composer.addPass(bloomPass);
+            composer.addPass(new OutputPass());
 
-                composer = new EffectComposer(renderer);
-                composer.addPass(new RenderPass(scene, camera));
-                
-                try {
-                    const bloomPass = new UnrealBloomPass(
-                        new THREE.Vector2(window.innerWidth / 2, window.innerHeight / 2), 
-                        1.2, 0.4, 0.85
-                    );
-                    composer.addPass(bloomPass);
-                } catch(e) {}
-                
-                composer.addPass(new OutputPass());
+            scene.add(new THREE.AmbientLight(0xffffff, 0.4)); 
+            scene.add(new THREE.HemisphereLight(0x00ffff, 0xff00ff, 0.5));
+            pointLight = new THREE.PointLight(0x00ffff, 6, 60);
+            scene.add(pointLight);
 
-                scene.add(new THREE.AmbientLight(0xffffff, 0.4)); 
-                scene.add(new THREE.HemisphereLight(0x00ffff, 0xff00ff, 0.5));
-                pointLight = new THREE.PointLight(0x00ffff, 6, 60);
-                pointLight.decay = 2;
-                scene.add(pointLight);
-
-                const nebulaGeom = new THREE.SphereGeometry(400, 32, 32);
-                const nebulaMat = new THREE.MeshBasicMaterial({ 
-                    side: THREE.BackSide, vertexColors: true, transparent: true, opacity: 0.1, fog: false 
-                });
-                const count = nebulaGeom.attributes.position.count;
-                const colors = new Float32Array(count * 3);
-                for(let i=0; i<count; i++) {
-                    const c = new THREE.Color().setHSL(Math.random() * 0.1 + 0.6, 0.7, 0.3);
-                    colors[i*3] = c.r; colors[i*3+1] = c.g; colors[i*3+2] = c.b;
-                }
-                nebulaGeom.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-                nebula = new THREE.Mesh(nebulaGeom, nebulaMat);
-                scene.add(nebula);
-
-                starLayerBack = createStarfield(12000, 0.4, 250, 0.5, true);
-                scene.add(starLayerBack);
-
-                starLayerMid = createStarfield(4000, 0.7, 180, 0.8, true);
-                scene.add(starLayerMid);
-
-                const rubbleGeom = new THREE.BoxGeometry(1, 1, 1);
-                const rubbleMat = new THREE.MeshStandardMaterial({
-                    metalness: 0.5, 
-                    roughness: 0.2,
-                    transparent: true,
-                    opacity: 0.8,
-                    emissive: new THREE.Color(0xffffff),
-                    emissiveIntensity: 0.5
-                });
-                rubbleInstances = new THREE.InstancedMesh(rubbleGeom, rubbleMat, CONFIG.MAX_RUBBLE);
-                rubbleInstances.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-                rubbleInstances.frustumCulled = false; 
-                for (let i = 0; i < CONFIG.MAX_RUBBLE; i++) {
-                    const matrix = new THREE.Matrix4().makeTranslation(0, -500, 0);
-                    rubbleInstances.setMatrixAt(i, matrix);
-                    rubbleInstances.setColorAt(i, new THREE.Color(0xffffff));
-                    state.rubbleData[i] = { 
-                        isActive: false, 
-                        position: new THREE.Vector3(0, -500, 0),
-                        rotation: new THREE.Euler(),
-                        scale: new THREE.Vector3(1, 1, 1),
-                        velocity: new THREE.Vector3(),
-                        angularVelocity: new THREE.Vector3()
-                    };
-                }
-                scene.add(rubbleInstances);
-
-                createFoundation();
-                state.lastTime = performance.now();
-                requestAnimationFrame(animate);
-
-                window.addEventListener('resize', () => {
-                    camera.aspect = window.innerWidth / window.innerHeight;
-                    camera.updateProjectionMatrix();
-                    renderer.setSize(window.innerWidth, window.innerHeight);
-                    if (composer) composer.setSize(window.innerWidth, window.innerHeight);
-                });
-
-                const handleInput = (e) => {
-                    if (state.status !== 'PLAYING') return;
-                    
-                    // Critical protection for buttons and glass panel clicks
-                    const isUI = e.target.tagName === 'BUTTON' || (e.target.closest && e.target.closest('.glass-panel'));
-                    if (isUI) return;
-
-                    const now = performance.now();
-                    // CRITICAL FIX: Prevent double-firing within short window (150ms)
-                    if (now - state.lastInputTime < CONFIG.INPUT_COOLDOWN) return;
-                    
-                    // CRITICAL FIX: Prevent placing block if it JUST spawned (less than 200ms ago)
-                    if (now - state.lastSpawnTime < 200) return;
-
-                    state.lastInputTime = now;
-                    placeBlock();
-                };
-
-                // INPUT EVENT LISTENERS UPDATED FOR MOBILE
-                window.addEventListener('mousedown', (e) => { 
-                    if (e.button === 0) handleInput(e); 
-                });
-
-                window.addEventListener('touchstart', (e) => {
-                    // Prevent emulated mouse events from firing after touch
-                    if (!e.target.tagName === 'BUTTON' && !(e.target.closest && e.target.closest('.glass-panel'))) {
-                        e.preventDefault();
-                        handleInput(e);
-                    }
-                }, { passive: false });
-
-            } catch(err) {
-                console.error("Engine failure:", err);
+            const nebulaGeom = new THREE.SphereGeometry(400, 32, 32);
+            const nebulaMat = new THREE.MeshBasicMaterial({ side: THREE.BackSide, vertexColors: true, transparent: true, opacity: 0.25 });
+            const count = nebulaGeom.attributes.position.count;
+            const colors = new Float32Array(count * 3);
+            for(let i=0; i<count; i++) {
+                const c = new THREE.Color().setHSL(Math.random() * 0.15 + 0.55, 0.6, 0.25);
+                colors[i*3] = c.r; colors[i*3+1] = c.g; colors[i*3+2] = c.b;
             }
+            nebulaGeom.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            nebula = new THREE.Mesh(nebulaGeom, nebulaMat);
+            scene.add(nebula);
+
+            starLayerBack = createStarfield(18000, 0.6, 250, 0.6, true);
+            scene.add(starLayerBack);
+            starLayerMid = createStarfield(8000, 1.0, 180, 0.85, true);
+            scene.add(starLayerMid);
+
+            const rubbleGeom = new THREE.BoxGeometry(1, 1, 1);
+            const rubbleMat = new THREE.MeshStandardMaterial({ 
+                metalness: 0.5, roughness: 0.2, transparent: true, opacity: 0.8 
+            });
+            rubbleInstances = new THREE.InstancedMesh(rubbleGeom, rubbleMat, CONFIG.MAX_RUBBLE);
+            rubbleInstances.frustumCulled = false;
+            for (let i = 0; i < CONFIG.MAX_RUBBLE; i++) {
+                rubbleInstances.setMatrixAt(i, new THREE.Matrix4().makeTranslation(0, -500, 0));
+                rubbleInstances.setColorAt(i, new THREE.Color(0xffffff)); // Initialize color buffer
+                state.rubbleData[i] = { 
+                    isActive: false, position: new THREE.Vector3(0, -500, 0), 
+                    rotation: new THREE.Euler(), scale: new THREE.Vector3(1, 1, 1), 
+                    velocity: new THREE.Vector3(), angularVelocity: new THREE.Vector3() 
+                };
+            }
+            scene.add(rubbleInstances);
+
+            createFoundation();
+            requestAnimationFrame(animate);
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight); composer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            const handleInput = (e) => {
+                if (state.status !== 'PLAYING') return;
+                if (e.target.tagName === 'BUTTON' || e.target.closest('.glass-panel') || e.target.closest('.round-btn')) return;
+                const now = performance.now();
+                if (now - state.lastInputTime < CONFIG.INPUT_COOLDOWN) return;
+                if (now - state.lastSpawnTime < 200) return;
+                state.lastInputTime = now;
+                placeBlock();
+            };
+
+            window.addEventListener('mousedown', (e) => { if (e.button === 0) handleInput(e); });
+            window.addEventListener('touchstart', (e) => { if (!e.target.closest('.glass-panel') && !e.target.closest('.round-btn')) { e.preventDefault(); handleInput(e); } }, { passive: false });
         }
 
         function createStarfield(count, size, dist, opacity, isDistant) {
@@ -578,55 +495,35 @@
                 pos[i*3] = r * Math.sin(phi) * Math.cos(theta);
                 pos[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
                 pos[i*3+2] = r * Math.cos(phi);
-                
-                const brightness = 0.5 + Math.random() * 0.5;
-                const color = new THREE.Color();
-                if (Math.random() > 0.8) color.setHSL(Math.random() * 0.1 + 0.55, 0.5, brightness);
-                else color.setHSL(0, 0, brightness);
+                const hue = Math.random() > 0.8 ? (Math.random() * 0.2 + 0.5) : 0;
+                const sat = hue > 0 ? 0.4 : 0;
+                const brightness = 0.6 + Math.random() * 0.4;
+                const color = new THREE.Color().setHSL(hue, sat, brightness);
                 cols[i*3] = color.r; cols[i*3+1] = color.g; cols[i*3+2] = color.b;
             }
             geom.setAttribute('position', new THREE.BufferAttribute(pos, 3));
             geom.setAttribute('color', new THREE.BufferAttribute(cols, 3));
-            return new THREE.Points(geom, new THREE.PointsMaterial({
-                size, vertexColors: true, transparent: true, opacity, sizeAttenuation: true, fog: false
-            }));
+            return new THREE.Points(geom, new THREE.PointsMaterial({ size, vertexColors: true, transparent: true, opacity, sizeAttenuation: true, fog: false }));
         }
 
         function createGlassMaterial(color) {
-            return new THREE.MeshPhysicalMaterial({
-                color: color, 
-                emissive: color, 
-                emissiveIntensity: 0.8,
-                metalness: 0.2, 
-                roughness: 0.1,
-                transmission: 0.85, 
-                thickness: 1.5, 
-                ior: 1.45, 
-                clearcoat: 0.8, 
-                reflectivity: 0.4,
-                transparent: true, 
-                opacity: 0.9
-            });
+            return new THREE.MeshPhysicalMaterial({ color: color, emissive: color, emissiveIntensity: 0.8, metalness: 0.2, roughness: 0.1, transmission: 0.85, thickness: 1.5, transparent: true, opacity: 0.9 });
         }
 
         function createFoundation() {
             const geom = new THREE.BoxGeometry(CONFIG.INITIAL_SIZE, CONFIG.BLOCK_HEIGHT, CONFIG.INITIAL_SIZE);
             const mat = createGlassMaterial(new THREE.Color(0x00ffff));
-            mat.emissiveIntensity = 1.2; 
             const mesh = new THREE.Mesh(geom, mat);
             scene.add(mesh);
             state.stack.push(mesh);
         }
 
         function spawnNewBlock() {
-            if (state.stack.length === 0) return;
             const prev = state.stack[state.stack.length - 1];
             state.axis = state.axis === 'x' ? 'z' : 'x';
-            const colorIndex = state.stack.length % state.currentTheme.colors.length;
-            const color = new THREE.Color(state.currentTheme.colors[colorIndex]);
+            const color = new THREE.Color(state.currentTheme.colors[state.stack.length % state.currentTheme.colors.length]);
             const geom = new THREE.BoxGeometry(prev.geometry.parameters.width, CONFIG.BLOCK_HEIGHT, prev.geometry.parameters.depth);
-            const mat = createGlassMaterial(color);
-            const mesh = new THREE.Mesh(geom, mat);
+            const mesh = new THREE.Mesh(geom, createGlassMaterial(color));
             mesh.position.y = state.stack.length * CONFIG.BLOCK_HEIGHT;
             const offset = Math.random() > 0.5 ? 12 : -12;
             state.direction = offset > 0 ? -1 : 1;
@@ -634,59 +531,39 @@
             mesh.position[state.axis === 'x' ? 'z' : 'x'] = prev.position[state.axis === 'x' ? 'z' : 'x'];
             scene.add(mesh);
             state.activeBlock = mesh;
-            state.lastSpawnTime = performance.now(); // Mark spawn time for input gate
+            state.lastSpawnTime = performance.now();
         }
 
         function placeBlock() {
-            if (!state.activeBlock || state.status !== 'PLAYING') return;
+            if (!state.activeBlock) return;
             const active = state.activeBlock;
             const prev = state.stack[state.stack.length - 1];
+            const diffConfig = DIFFICULTIES[state.difficulty];
             const axis = state.axis;
-            
             const size = axis === 'x' ? active.geometry.parameters.width : active.geometry.parameters.depth;
             let delta = active.position[axis] - prev.position[axis];
-            
-            // INCREASED THRESHOLD FOR MOBILE RELIABILITY
-            const threshold = state.stack.length <= CONFIG.MERCY_COUNT ? CONFIG.MERCY_THRESHOLD : CONFIG.PERFECT_THRESHOLD;
-            
-            if (Math.abs(delta) < threshold) {
-                delta = 0; 
-            }
-
+            const threshold = state.stack.length <= diffConfig.mercy ? diffConfig.threshold : 0.15;
+            if (Math.abs(delta) < threshold) delta = 0;
             const absDelta = Math.abs(delta);
             const overlap = size - absDelta;
-
-            // Improved crash detection
-            if (overlap <= 0.05) { 
-                gameOver(); 
-                return; 
-            }
-
+            if (overlap <= 0.05) { gameOver(); return; }
             if (delta === 0) {
                 active.position[axis] = prev.position[axis];
                 state.combo++;
                 if (state.combo > state.maxSessionCombo) state.maxSessionCombo = state.combo;
-                state.flash = 0.5; 
-                AudioService.playNote(state.stack.length, true);
+                state.flash = 0.5; AudioService.playNote(state.stack.length, true);
             } else {
                 state.combo = 0;
                 spawnRubble(active, prev, axis, delta, overlap);
                 active.geometry.dispose();
                 const other = axis === 'x' ? active.geometry.parameters.depth : active.geometry.parameters.width;
-                active.geometry = axis === 'x' 
-                    ? new THREE.BoxGeometry(overlap, CONFIG.BLOCK_HEIGHT, other)
-                    : new THREE.BoxGeometry(other, CONFIG.BLOCK_HEIGHT, overlap);
+                active.geometry = axis === 'x' ? new THREE.BoxGeometry(overlap, CONFIG.BLOCK_HEIGHT, other) : new THREE.BoxGeometry(other, CONFIG.BLOCK_HEIGHT, overlap);
                 active.position[axis] = prev.position[axis] + delta / 2;
                 AudioService.playNote(state.stack.length, false);
             }
-
-            state.stack.push(active);
-            state.activeBlock = null;
-            state.score++;
-            state.speed = Math.min(CONFIG.MAX_SPEED, state.speed + CONFIG.SPEED_INC);
-            
-            UIManager.render();
-            spawnNewBlock();
+            state.stack.push(active); state.activeBlock = null; state.score++;
+            state.speed = Math.min(diffConfig.max, state.speed + diffConfig.inc);
+            UIManager.render(); spawnNewBlock();
         }
 
         function spawnRubble(active, prev, axis, delta, overlap) {
@@ -694,90 +571,56 @@
             const size = axis === 'x' ? params.width : params.depth;
             const other = axis === 'x' ? params.depth : params.width;
             const rSize = size - overlap;
-
+            
             const idx = state.rubbleData.findIndex(r => !r.isActive);
             if (idx === -1) return;
-
+            
             const rPos = active.position.clone();
-            rPos[axis] = prev.position[axis] + (overlap / 2 + rSize / 2) * Math.sign(delta);
-
+            // Position rubble center at the midpoint of the dropped section
+            rPos[axis] = prev.position[axis] + (size / 2 + rSize / 2) * Math.sign(delta);
+            
             const rScale = axis === 'x' ? new THREE.Vector3(rSize, CONFIG.BLOCK_HEIGHT, other) : new THREE.Vector3(other, CONFIG.BLOCK_HEIGHT, rSize);
-
+            
             state.rubbleData[idx].isActive = true;
             state.rubbleData[idx].position.copy(rPos);
             state.rubbleData[idx].scale.copy(rScale);
             state.rubbleData[idx].rotation.set(0, 0, 0);
-            state.rubbleData[idx].velocity.set(0, -5, 0);
-            state.rubbleData[idx].angularVelocity.set(Math.random() * 5, Math.random() * 2, Math.random() * 5);
+            state.rubbleData[idx].velocity.set(0, -10, 0); // Faster initial drop
+            state.rubbleData[idx].angularVelocity.set(Math.random() * 8 - 4, Math.random() * 4 - 2, Math.random() * 8 - 4);
             
             rubbleInstances.setColorAt(idx, active.material.color);
-            if (rubbleInstances.instanceColor) rubbleInstances.instanceColor.needsUpdate = true;
+            rubbleInstances.instanceColor.needsUpdate = true;
         }
 
         function gameOver() {
             state.status = 'GAMEOVER';
-            if (state.score > state.bestScore) {
-                state.bestScore = state.score;
-                try { localStorage.setItem('stack_best', state.bestScore.toString()); } catch(e) {}
-            }
-            if (state.maxSessionCombo > state.bestStreak) {
-                state.bestStreak = state.maxSessionCombo;
-                try { localStorage.setItem('stack_best_streak', state.bestStreak.toString()); } catch(e) {}
-            }
+            if (state.score > state.bestScore) { state.bestScore = state.score; localStorage.setItem('stack_best', state.bestScore.toString()); }
+            if (state.maxSessionCombo > state.bestStreak) { state.bestStreak = state.maxSessionCombo; localStorage.setItem('stack_best_streak', state.bestStreak.toString()); }
             AudioService.playGameOver();
             UIManager.render();
         }
 
         function startGame() {
-            cleanup();
-            AudioService.init();
-            state.status = 'PLAYING';
-            state.score = 0; 
-            state.combo = 0; 
-            state.maxSessionCombo = 0;
-            state.speed = CONFIG.SPEED_INITIAL;
-            state.axis = 'x';
-            state.camPos.set(14, 8, 14);
-            state.camTarget.set(14, 8, 14);
-            state.lookTarget.set(0, 2, 0);
-            state.lastSpawnTime = performance.now();
-            createFoundation();
-            UIManager.render();
-            spawnNewBlock();
+            cleanup(); AudioService.init();
+            const d = DIFFICULTIES[state.difficulty];
+            state.status = 'PLAYING'; state.score = 0; state.combo = 0; state.maxSessionCombo = 0;
+            state.speed = d.initial; state.axis = 'x';
+            state.camPos.set(14, 8, 14); state.camTarget.set(14, 8, 14); state.lookTarget.set(0, 2, 0);
+            createFoundation(); UIManager.render(); spawnNewBlock();
         }
 
-        function pauseGame() { state.status = 'PAUSED'; UIManager.render(); }
-        function resumeGame() { state.status = 'PLAYING'; state.lastTime = performance.now(); UIManager.render(); }
-        function restartGame() { startGame(); }
-        
-        function backToMenu() { 
-            cleanup(); 
-            state.status = 'START'; 
-            createFoundation(); 
-            updateThemeVisuals(); 
-            UIManager.render(); 
-        }
+        function backToMenu() { cleanup(); state.status = 'START'; createFoundation(); updateThemeVisuals(); UIManager.render(); }
 
         function cleanup() {
-            state.stack.forEach(m => { scene.remove(m); if (m.geometry) m.geometry.dispose(); if (m.material) m.material.dispose(); });
-            if (state.activeBlock) { scene.remove(state.activeBlock); if (state.activeBlock.geometry) state.activeBlock.geometry.dispose(); if (state.activeBlock.material) state.activeBlock.material.dispose(); }
+            state.stack.forEach(m => { scene.remove(m); if (m.geometry) m.geometry.dispose(); });
+            if (state.activeBlock) { scene.remove(state.activeBlock); if (state.activeBlock.geometry) state.activeBlock.geometry.dispose(); }
             state.stack = []; state.activeBlock = null;
-            for (let i = 0; i < CONFIG.MAX_RUBBLE; i++) {
-                state.rubbleData[i].isActive = false;
-                state.rubbleData[i].position.set(0, -500, 0);
-                _m4.makeTranslation(0, -500, 0);
-                rubbleInstances.setMatrixAt(i, _m4);
-            }
+            for (let i = 0; i < CONFIG.MAX_RUBBLE; i++) { state.rubbleData[i].isActive = false; _m4.makeTranslation(0, -500, 0); rubbleInstances.setMatrixAt(i, _m4); }
             rubbleInstances.instanceMatrix.needsUpdate = true;
         }
 
         function updateThemeVisuals() {
-            if (!state.currentTheme) return;
-            state.stack.forEach((m, i) => {
-                const c = new THREE.Color(state.currentTheme.colors[i % state.currentTheme.colors.length]);
-                m.material.color.copy(c);
-                m.material.emissive.copy(c);
-            });
+            state.stack.forEach((m, i) => { const c = new THREE.Color(state.currentTheme.colors[i % state.currentTheme.colors.length]); m.material.color.copy(c); m.material.emissive.copy(c); });
         }
 
         function animate(time) {
@@ -785,90 +628,56 @@
             if (!state.lastTime) state.lastTime = time;
             const dt = Math.min((time - state.lastTime) / 1000, 0.04); 
             state.lastTime = time;
-
-            try {
-                if (nebula) nebula.rotation.y += 0.01 * dt;
-                
-                if (starLayerMid) {
-                    starLayerMid.material.opacity = 0.6 + Math.sin(time * 0.003) * 0.2;
-                    starLayerMid.rotation.y += 0.003 * dt;
-                }
-                if (starLayerBack) starLayerBack.rotation.y += 0.001 * dt;
-                
-                if (state.status === 'START') {
-                    state.cameraOrbit += 0.12 * dt;
-                    state.camTarget.set(16 * Math.cos(state.cameraOrbit), 8, 16 * Math.sin(state.cameraOrbit));
-                    state.lookTarget.set(0, 2, 0);
-                    camera.position.lerp(state.camTarget, 0.035);
-                    camera.lookAt(state.lookTarget);
-                } else {
-                    const stackHeight = state.stack.length * CONFIG.BLOCK_HEIGHT;
-                    const targetCamHeight = stackHeight + 7.5;
-                    state.camTarget.set(13, targetCamHeight, 13);
-                    state.lookTarget.lerp(_v3.set(0, stackHeight, 0), CONFIG.CAMERA_LERP);
-                    camera.position.lerp(state.camTarget, CONFIG.CAMERA_LERP);
-                    camera.lookAt(state.lookTarget.x, state.lookTarget.y - 2.8, state.lookTarget.z);
-                }
-
-                if (state.flash > 0) {
-                    renderer.toneMappingExposure = 1.0 + state.flash * 0.6;
-                    state.flash -= 2.0 * dt;
-                } else {
-                    renderer.toneMappingExposure = 1.0;
-                }
-
-                if (state.status === 'PLAYING' && state.activeBlock) {
-                    const moveAmount = state.direction * state.speed * (dt * 60);
-                    state.activeBlock.position[state.axis] += moveAmount;
-                    if (Math.abs(state.activeBlock.position[state.axis]) > 13) {
-                        state.direction *= -1;
-                        state.activeBlock.position[state.axis] = 13 * Math.sign(state.activeBlock.position[state.axis]);
-                    }
-                    pointLight.position.copy(state.activeBlock.position).y += 2.5;
-                    pointLight.color.copy(state.activeBlock.material.color);
-                    pointLight.intensity = 8 + (state.flash * 8);
-                }
-
-                let rubbleNeedsUpdate = false;
-                for (let i = 0; i < CONFIG.MAX_RUBBLE; i++) {
-                    const r = state.rubbleData[i];
-                    if (r.isActive) {
-                        r.position.y += r.velocity.y * (dt * 5);
-                        r.velocity.y -= 12 * dt; 
-                        
-                        r.rotation.x += r.angularVelocity.x * dt;
-                        r.rotation.y += r.angularVelocity.y * dt;
-                        r.rotation.z += r.angularVelocity.z * dt;
-                        
-                        if (r.position.y < -120) {
-                            r.isActive = false;
-                            r.position.set(0, -500, 0);
-                            _m4.makeTranslation(0, -500, 0);
-                        } else {
-                            _q.setFromEuler(r.rotation);
-                            _m4.compose(r.position, _q, r.scale);
-                        }
-                        rubbleInstances.setMatrixAt(i, _m4);
-                        rubbleNeedsUpdate = true;
-                    }
-                }
-                if (rubbleNeedsUpdate) {
-                    rubbleInstances.instanceMatrix.needsUpdate = true;
-                }
-
-                if (composer) composer.render();
-            } catch(loopErr) {
-                console.warn("Loop error", loopErr);
+            
+            if (nebula) nebula.rotation.y += 0.005 * dt;
+            if (starLayerBack) starLayerBack.rotation.y += 0.001 * dt;
+            if (starLayerMid) starLayerMid.rotation.y += 0.0025 * dt;
+            
+            if (state.status === 'START') {
+                state.cameraOrbit += 0.12 * dt;
+                state.camTarget.set(16 * Math.cos(state.cameraOrbit), 8, 16 * Math.sin(state.cameraOrbit));
+                camera.position.lerp(state.camTarget, 0.035);
+                camera.lookAt(state.lookTarget);
+            } else {
+                const h = state.stack.length * CONFIG.BLOCK_HEIGHT;
+                state.camTarget.set(13, h + 7.5, 13);
+                state.lookTarget.lerp(_v3.set(0, h, 0), CONFIG.CAMERA_LERP);
+                camera.position.lerp(state.camTarget, CONFIG.CAMERA_LERP);
+                camera.lookAt(state.lookTarget.x, state.lookTarget.y - 2.8, state.lookTarget.z);
             }
+
+            if (state.flash > 0) { renderer.toneMappingExposure = 1.0 + state.flash * 0.6; state.flash -= 2.0 * dt; } else { renderer.toneMappingExposure = 1.0; }
+
+            if (state.status === 'PLAYING' && state.activeBlock) {
+                state.activeBlock.position[state.axis] += state.direction * state.speed * (dt * 60);
+                if (Math.abs(state.activeBlock.position[state.axis]) > 13) { state.direction *= -1; state.activeBlock.position[state.axis] = 13 * Math.sign(state.activeBlock.position[state.axis]); }
+                pointLight.position.copy(state.activeBlock.position).y += 2.5; pointLight.color.copy(state.activeBlock.material.color);
+            }
+
+            let rubUpdate = false;
+            for (let i = 0; i < CONFIG.MAX_RUBBLE; i++) {
+                const r = state.rubbleData[i];
+                if (r.isActive) {
+                    r.position.y += r.velocity.y * (dt * 5); 
+                    r.velocity.y -= 25 * dt; // Stronger gravity
+                    r.rotation.x += r.angularVelocity.x * dt; 
+                    r.rotation.y += r.angularVelocity.y * dt; 
+                    r.rotation.z += r.angularVelocity.z * dt;
+                    if (r.position.y < -120) { 
+                        r.isActive = false; 
+                        _m4.makeTranslation(0, -500, 0); 
+                    } else { 
+                        _m4.compose(r.position, _q.setFromEuler(r.rotation), r.scale); 
+                    }
+                    rubbleInstances.setMatrixAt(i, _m4); 
+                    rubUpdate = true;
+                }
+            }
+            if (rubUpdate) rubbleInstances.instanceMatrix.needsUpdate = true;
+            composer.render();
         }
 
-        const boot = async () => {
-            if (document.readyState === 'loading') { await new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve)); }
-            initEngine();
-            await initGameData();
-        };
-
-        boot();
+        initEngine(); initGameData();
     </script>
 </body>
 </html>
