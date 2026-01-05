@@ -217,6 +217,12 @@
             lookTarget: new THREE.Vector3(0, 2, 0)
         };
 
+        // Reusable objects for animation performance
+        const _v3 = new THREE.Vector3();
+        const _q = new THREE.Quaternion();
+        const _m4 = new THREE.Matrix4();
+        const _euler = new THREE.Euler();
+
         const AudioService = {
             ctx: null,
             scale: [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25],
@@ -483,20 +489,31 @@
                 starLayerMid = createStarfield(4000, 0.7, 180, 0.8, true);
                 scene.add(starLayerMid);
 
+                // RUBBLE SYSTEM RE-IMPLEMENTATION
                 const rubbleGeom = new THREE.BoxGeometry(1, 1, 1);
-                const rubbleMat = new THREE.MeshPhysicalMaterial({
-                    metalness: 0.2, 
-                    roughness: 0.1,
-                    transmission: 0.4, 
+                const rubbleMat = new THREE.MeshStandardMaterial({
+                    metalness: 0.5, 
+                    roughness: 0.2,
                     transparent: true,
-                    opacity: 0.6
+                    opacity: 0.8,
+                    emissive: new THREE.Color(0xffffff),
+                    emissiveIntensity: 0.5
                 });
                 rubbleInstances = new THREE.InstancedMesh(rubbleGeom, rubbleMat, CONFIG.MAX_RUBBLE);
                 rubbleInstances.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+                rubbleInstances.frustumCulled = false; 
                 for (let i = 0; i < CONFIG.MAX_RUBBLE; i++) {
-                    const matrix = new THREE.Matrix4().makeTranslation(0, -100, 0);
+                    const matrix = new THREE.Matrix4().makeTranslation(0, -500, 0);
                     rubbleInstances.setMatrixAt(i, matrix);
-                    state.rubbleData[i] = { isActive: false };
+                    rubbleInstances.setColorAt(i, new THREE.Color(0xffffff));
+                    state.rubbleData[i] = { 
+                        isActive: false, 
+                        position: new THREE.Vector3(0, -500, 0),
+                        rotation: new THREE.Euler(),
+                        scale: new THREE.Vector3(1, 1, 1),
+                        velocity: new THREE.Vector3(),
+                        angularVelocity: new THREE.Vector3()
+                    };
                 }
                 scene.add(rubbleInstances);
 
@@ -595,6 +612,7 @@
             state.activeBlock = mesh;
         }
 
+        // UPDATED placeBlock logic as requested with Rounding Correction
         function placeBlock() {
             if (!state.activeBlock || state.status !== 'PLAYING') return;
             const active = state.activeBlock;
@@ -657,35 +675,31 @@
             const idx = state.rubbleData.findIndex(r => !r.isActive);
             if (idx === -1) return;
 
-            const rScale = axis === 'x' ? new THREE.Vector3(rSize, CONFIG.BLOCK_HEIGHT, other) : new THREE.Vector3(other, CONFIG.BLOCK_HEIGHT, rSize);
             const rPos = active.position.clone();
             rPos[axis] = prev.position[axis] + (overlap / 2 + rSize / 2) * Math.sign(delta);
 
-            state.rubbleData[idx] = {
-                isActive: true,
-                position: rPos,
-                rotation: new THREE.Euler(0, 0, 0),
-                scale: rScale,
-                velocity: new THREE.Vector3(0, -5, 0),
-                angularVelocity: new THREE.Euler(Math.random() * 5, 0, Math.random() * 5),
-                color: active.material.color.clone()
-            };
+            const rScale = axis === 'x' ? new THREE.Vector3(rSize, CONFIG.BLOCK_HEIGHT, other) : new THREE.Vector3(other, CONFIG.BLOCK_HEIGHT, rSize);
+
+            state.rubbleData[idx].isActive = true;
+            state.rubbleData[idx].position.copy(rPos);
+            state.rubbleData[idx].scale.copy(rScale);
+            state.rubbleData[idx].rotation.set(0, 0, 0);
+            state.rubbleData[idx].velocity.set(0, -5, 0);
+            state.rubbleData[idx].angularVelocity.set(Math.random() * 5, Math.random() * 2, Math.random() * 5);
+            
             rubbleInstances.setColorAt(idx, active.material.color);
-            rubbleInstances.instanceColor.needsUpdate = true;
+            if (rubbleInstances.instanceColor) rubbleInstances.instanceColor.needsUpdate = true;
         }
 
         function gameOver() {
             state.status = 'GAMEOVER';
-            let updateNeeded = false;
             if (state.score > state.bestScore) {
                 state.bestScore = state.score;
                 try { localStorage.setItem('stack_best', state.bestScore.toString()); } catch(e) {}
-                updateNeeded = true;
             }
             if (state.maxSessionCombo > state.bestStreak) {
                 state.bestStreak = state.maxSessionCombo;
                 try { localStorage.setItem('stack_best_streak', state.bestStreak.toString()); } catch(e) {}
-                updateNeeded = true;
             }
             AudioService.playGameOver();
             UIManager.render();
@@ -726,8 +740,9 @@
             state.stack = []; state.activeBlock = null;
             for (let i = 0; i < CONFIG.MAX_RUBBLE; i++) {
                 state.rubbleData[i].isActive = false;
-                const matrix = new THREE.Matrix4().makeTranslation(0, -100, 0);
-                rubbleInstances.setMatrixAt(i, matrix);
+                state.rubbleData[i].position.set(0, -500, 0);
+                _m4.makeTranslation(0, -500, 0);
+                rubbleInstances.setMatrixAt(i, _m4);
             }
             rubbleInstances.instanceMatrix.needsUpdate = true;
         }
@@ -766,7 +781,7 @@
                     const stackHeight = state.stack.length * CONFIG.BLOCK_HEIGHT;
                     const targetCamHeight = stackHeight + 7.5;
                     state.camTarget.set(13, targetCamHeight, 13);
-                    state.lookTarget.lerp(new THREE.Vector3(0, stackHeight, 0), CONFIG.CAMERA_LERP);
+                    state.lookTarget.lerp(_v3.set(0, stackHeight, 0), CONFIG.CAMERA_LERP);
                     camera.position.lerp(state.camTarget, CONFIG.CAMERA_LERP);
                     camera.lookAt(state.lookTarget.x, state.lookTarget.y - 2.8, state.lookTarget.z);
                 }
@@ -790,27 +805,28 @@
                     pointLight.intensity = 8 + (state.flash * 8);
                 }
 
+                // RUBBLE ANIMATION & VISIBILITY FIX
                 let rubbleNeedsUpdate = false;
                 for (let i = 0; i < CONFIG.MAX_RUBBLE; i++) {
                     const r = state.rubbleData[i];
                     if (r.isActive) {
                         r.position.y += r.velocity.y * (dt * 5);
-                        r.velocity.y -= 10 * dt; 
+                        r.velocity.y -= 12 * dt; 
+                        
                         r.rotation.x += r.angularVelocity.x * dt;
+                        r.rotation.y += r.angularVelocity.y * dt;
                         r.rotation.z += r.angularVelocity.z * dt;
                         
-                        if (r.position.y < -50) {
+                        // Improved cleanup logic to prevent flickering or early removal
+                        if (r.position.y < -120) {
                             r.isActive = false;
-                            const matrix = new THREE.Matrix4().makeTranslation(0, -100, 0);
-                            rubbleInstances.setMatrixAt(i, matrix);
+                            r.position.set(0, -500, 0);
+                            _m4.makeTranslation(0, -500, 0);
                         } else {
-                            const matrix = new THREE.Matrix4();
-                            const position = new THREE.Vector3().copy(r.position);
-                            const quaternion = new THREE.Quaternion().setFromEuler(r.rotation);
-                            const scale = new THREE.Vector3().copy(r.scale);
-                            matrix.compose(position, quaternion, scale);
-                            rubbleInstances.setMatrixAt(i, matrix);
+                            _q.setFromEuler(r.rotation);
+                            _m4.compose(r.position, _q, r.scale);
                         }
+                        rubbleInstances.setMatrixAt(i, _m4);
                         rubbleNeedsUpdate = true;
                     }
                 }
