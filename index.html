@@ -56516,7 +56516,7 @@ console.log('Three.js r160 with postprocessing loaded (embedded)');
 
       const handleInput = (e) => {
         if (state.status !== 'PLAYING') return;
-        if (e.target.tagName === 'BUTTON' || e.target.closest('.glass-panel') || e.target.closest('.round-btn') || e.target.closest('.powerup-slot') || e.target.closest('.powerup-inventory')) return;
+        if (e.target.tagName === 'BUTTON' || e.target.closest('.glass-panel') || e.target.closest('.round-btn') || e.target.closest('.powerup-slot') || e.target.closest('.powerup-inventory') || e.target.closest('.tutorial-overlay')) return;
         const now = performance.now();
         if (now - state.lastInputTime < CONFIG.INPUT_COOLDOWN) return;
         if (now - state.lastSpawnTime < 200) return;
@@ -56537,7 +56537,7 @@ console.log('Three.js r160 with postprocessing loaded (embedded)');
       window.addEventListener(
         'touchstart',
         (e) => {
-          if (!e.target.closest('.glass-panel') && !e.target.closest('.round-btn') && !e.target.closest('.powerup-slot') && !e.target.closest('.powerup-inventory')) {
+          if (!e.target.closest('.glass-panel') && !e.target.closest('.round-btn') && !e.target.closest('.powerup-slot') && !e.target.closest('.powerup-inventory') && !e.target.closest('.tutorial-overlay')) {
             e.preventDefault();
             handleInput(e);
           }
