@@ -56120,6 +56120,9 @@ console.log('Three.js r160 with postprocessing loaded (embedded)');
       state.axis = state.axis === 'x' ? 'z' : 'x';
       const color = new THREE.Color(state.currentTheme.colors[state.stack.length % state.currentTheme.colors.length]);
       
+      const SUPER_MULT = 1.3;
+      const superActive = state.activePowerUps.superSize.active && state.activePowerUps.superSize.count > 0;
+
       // Get base size from previous block (stored in userData or use geometry)
       const baseWidth = prev.userData?.baseWidth || prev.geometry.parameters.width;
       const baseDepth = prev.userData?.baseDepth || prev.geometry.parameters.depth;
@@ -56127,9 +56130,9 @@ console.log('Three.js r160 with postprocessing loaded (embedded)');
       // Apply Super Size power-up if active (multiplier on base size, not compounding)
       let actualWidth = baseWidth;
       let actualDepth = baseDepth;
-      if (state.activePowerUps.superSize.active && state.activePowerUps.superSize.count > 0) {
-        actualWidth = baseWidth * 1.3;
-        actualDepth = baseDepth * 1.3;
+      if (superActive) { 
+        actualWidth = baseWidth * SUPER_MULT;
+        actualDepth = baseDepth * SUPER_MULT;
       }
       
       const geom = new THREE.BoxGeometry(
@@ -56141,9 +56144,11 @@ console.log('Three.js r160 with postprocessing loaded (embedded)');
       
       // Store base size for next block
       mesh.userData = {
-        baseWidth: baseWidth,
-        baseDepth: baseDepth
-      };
+  baseWidth,
+  baseDepth,
+  superSizeApplied: superActive,
+  superMult: SUPER_MULT
+};
       
       mesh.position.y = state.stack.length * CONFIG.BLOCK_HEIGHT + CONFIG.BLOCK_HEIGHT / 2;
       const offset = Math.random() > 0.5 ? 12 : -12;
@@ -56246,14 +56251,7 @@ console.log('Three.js r160 with postprocessing loaded (embedded)');
           awardPowerUp();
         }
 
-        // Decrement Super Size counter on perfect placement
-        if (state.activePowerUps.superSize.active && state.activePowerUps.superSize.count > 0) {
-          state.activePowerUps.superSize.count--;
-          if (state.activePowerUps.superSize.count === 0) {
-            state.activePowerUps.superSize.active = false;
-          }
-          updatePowerUpUI();
-        }
+                
       } else {
         state.combo = 0;
         spawnRubble(active, prev, axis, delta, overlap);
@@ -56268,13 +56266,31 @@ console.log('Three.js r160 with postprocessing loaded (embedded)');
         
         // Update base size after trimming
         if (!active.userData) active.userData = {};
-        active.userData.baseWidth = axis === 'x' ? overlap : other;
-        active.userData.baseDepth = axis === 'x' ? other : overlap;
+
+const mult = (active.userData.superSizeApplied)
+  ? (active.userData.superMult || 1.3)
+  : 1;
+
+active.userData.baseWidth = (axis === 'x' ? overlap : other) / mult;
+active.userData.baseDepth = (axis === 'x' ? other : overlap) / mult;
         
         AudioService.playNote(state.stack.length, false);
       }
 
       state.stack.push(active);
+      
+      // Consume Super Size power-up if THIS block used it (perfect OR trimmed)
+if (active.userData?.superSizeApplied) {
+  if (state.activePowerUps.superSize.active && state.activePowerUps.superSize.count > 0) {
+    state.activePowerUps.superSize.count--;
+    if (state.activePowerUps.superSize.count === 0) {
+      state.activePowerUps.superSize.active = false;
+    }
+    updatePowerUpUI();
+  }
+  active.userData.superSizeApplied = false; // safety
+}
+
       state.activeBlock = null;
       state.score++;
       state.speed = Math.min(diffConfig.max, state.speed + diffConfig.inc);
